@@ -192,16 +192,18 @@ export function useAppData() {
   // ── Sync a Supabase con debounce ───────────────────────
   useEffect(() => {
     if (!loaded) return
-    // Siempre guardar en localStorage
     localStorage.setItem('habit-tracker-v2', JSON.stringify(data))
-    // Si hay usuario, sync a Supabase con debounce 1.5s
-    if (userId) {
-      if (syncTimer.current) clearTimeout(syncTimer.current)
-      syncTimer.current = setTimeout(async () => {
-        await supabase.from('user_data').upsert({ user_id: userId, data, updated_at: new Date().toISOString() })
-      }, 500)
-    }
-  }, [data, loaded, userId])
+    if (syncTimer.current) clearTimeout(syncTimer.current)
+    syncTimer.current = setTimeout(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { error } = await supabase
+          .from('user_data')
+          .upsert({ user_id: user.id, data, updated_at: new Date().toISOString() })
+        if (error) console.error('Sync error:', error)
+      }
+    }, 500)
+  }, [data, loaded])
 
   const toggleHabit = (habitId: string, dateKey: string) => {
     setData(prev => {
