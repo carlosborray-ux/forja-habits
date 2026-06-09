@@ -129,13 +129,37 @@ export default function HabitsPage() {
         </div>
       </div>
 
+      {/* ── Category filter pills ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        <button onClick={() => setFilterCat('all')} style={{
+          padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+          background: filterCat === 'all' ? 'var(--accent-purple)' : 'rgba(255,255,255,0.06)',
+          color: filterCat === 'all' ? 'white' : 'var(--text-secondary)',
+        }}>Todos ({data.habits.length})</button>
+        {categories.map(c => {
+          const count = data.habits.filter(h => h.category === c.name).length
+          return (
+            <button key={c.id} onClick={() => setFilterCat(c.name)} style={{
+              padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              background: filterCat === c.name ? c.color : 'rgba(255,255,255,0.06)',
+              color: filterCat === c.name ? 'white' : 'var(--text-secondary)',
+              boxShadow: filterCat === c.name ? `0 0 14px ${c.color}55` : 'none',
+              transition: 'all 0.15s',
+            }}>{c.name} ({count})</button>
+          )
+        })}
+      </div>
+
+      {/* ── Una sola tabla: header + grupos en tbody (incluye gráfico arriba, alineado) ── */}
+      <div className="habits-scroll" style={{ overflowX: 'auto' }}>
       {/* ── Gráfico de línea mensual ── */}
       {(() => {
-        const W = 900, H = 110, PAD = { top: 20, right: 16, bottom: 28, left: 36 }
+        const COL0 = 220, COL = 54
+        const W = COL0 + days.length * COL, H = 110, PAD = { top: 20, right: 0, bottom: 28, left: COL0 }
         const innerW = W - PAD.left - PAD.right
         const innerH = H - PAD.top - PAD.bottom
         const pts = dayScores.map((d, i) => ({
-          x: PAD.left + (i / (dayScores.length - 1 || 1)) * innerW,
+          x: PAD.left + (i + 0.5) * COL,
           y: PAD.top + innerH - (d.score / 100) * innerH,
           score: d.score,
           key: d.key,
@@ -148,14 +172,14 @@ export default function HabitsPage() {
           pts.map(p => `L${p.x},${p.y}`).join(' ') +
           ` L${pts[pts.length - 1].x},${PAD.top + innerH} Z`
         return (
-          <div className="card" style={{ marginBottom: 20, padding: '14px 16px 8px', overflow: 'hidden' }}>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>
+          <div className="card" style={{ marginBottom: 6, padding: '14px 0 8px', overflow: 'hidden', width: 220 + days.length * 54 + 266 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6, padding: '0 16px' }}>
               PROGRESO DEL MES — {format(viewMonth, 'MMMM yyyy', { locale: es }).toUpperCase()}
               <span style={{ marginLeft: 12, color: 'var(--accent-teal)', fontWeight: 700 }}>
                 {Math.round(dayScores.filter(d => d.score > 0).reduce((a, d) => a + d.score, 0) / (dayScores.filter(d => d.score > 0).length || 1))}% promedio
               </span>
             </div>
-            <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ display: 'block', overflow: 'visible' }}>
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#FF4FA3" stopOpacity="0.35" />
@@ -209,30 +233,7 @@ export default function HabitsPage() {
         )
       })()}
 
-      {/* ── Category filter pills ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <button onClick={() => setFilterCat('all')} style={{
-          padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-          background: filterCat === 'all' ? 'var(--accent-purple)' : 'rgba(255,255,255,0.06)',
-          color: filterCat === 'all' ? 'white' : 'var(--text-secondary)',
-        }}>Todos ({data.habits.length})</button>
-        {categories.map(c => {
-          const count = data.habits.filter(h => h.category === c.name).length
-          return (
-            <button key={c.id} onClick={() => setFilterCat(c.name)} style={{
-              padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              background: filterCat === c.name ? c.color : 'rgba(255,255,255,0.06)',
-              color: filterCat === c.name ? 'white' : 'var(--text-secondary)',
-              boxShadow: filterCat === c.name ? `0 0 14px ${c.color}55` : 'none',
-              transition: 'all 0.15s',
-            }}>{c.name} ({count})</button>
-          )
-        })}
-      </div>
-
-      {/* ── Una sola tabla: header + grupos en tbody ── */}
-      <div className="habits-scroll" style={{ overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'separate', borderSpacing: '0 3px', minWidth: 900, width: '100%', tableLayout: 'fixed' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: '0 3px', width: 220 + days.length * 54 + 266, tableLayout: 'fixed' }}>
 
           {/* Definición de anchos de columna — garantiza alineación perfecta */}
           <colgroup>
