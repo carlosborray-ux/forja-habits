@@ -166,8 +166,10 @@ export function useAppData() {
             }))
           } catch {}
         }
-        // Redirigir a login
-        if (typeof window !== 'undefined') window.location.href = '/auth'
+        // Redirigir a login (solo si no estamos ya en /auth)
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+          window.location.href = '/auth'
+        }
       }
       setLoaded(true)
     }
