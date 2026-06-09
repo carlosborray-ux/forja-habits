@@ -1,0 +1,471 @@
+'use client'
+import { useState } from 'react'
+import { useAppData, getTodayKey, getStreak, getHabitMonthPct, getHabitMonthDone, Habit, Category } from '@/lib/store'
+import { format, getDaysInMonth } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+const COLORS = ['#7C6FFF','#00E5B8','#FF6B6B','#FFD93D','#4FC3F7','#FF4FA3','#FF8C00','#9B59B6','#2ECC71','#E74C3C']
+const ICONS  = ['💪','🧠','💧','📚','🏋️','😴','🥗','🧘','🔥','📈','✍️','🎯','🌅','🙏','📊','🚿','📵','🍽️','🎵','🏃']
+const STACKS = ['Mañana','Día','Trabajo','Noche','Fin de semana']
+
+type ModalMode = 'add' | 'edit' | null
+
+const emptyHabit = (): Omit<Habit, 'id' | 'completedDays' | 'createdAt'> => ({
+  name: '', color: '#7C6FFF', icon: '💪', category: '', goal: 30, stack: 'Día'
+})
+
+export default function HabitsPage() {
+  const { data, toggleHabit, addHabit, updateHabit, deleteHabit, addCategory, updateCategory, deleteCategory } = useAppData()
+  const today = getTodayKey()
+  const now = new Date()
+
+  const [viewMonth, setViewMonth] = useState(now)
+  const [habitModal, setHabitModal] = useState<ModalMode>(null)
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
+  const [form, setForm] = useState(emptyHabit())
+  const [catModal, setCatModal] = useState(false)
+  const [editingCat, setEditingCat] = useState<Category | null>(null)
+  const [catForm, setCatForm] = useState({ name: '', color: '#7C6FFF' })
+  const [filterCat, setFilterCat] = useState<string>('all')
+
+  const year  = viewMonth.getFullYear()
+  const month = viewMonth.getMonth()
+  const daysInMonth = getDaysInMonth(viewMonth)
+
+  const days = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = new Date(year, month, i + 1)
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`
+    // Semana del mes (1-5) basada en bloques de 7 desde el día 1
+    const weekNum = Math.ceil((i + 1) / 7)
+    return { n: i + 1, key, dow: format(d, 'EEEEE', { locale: es }), weekNum }
+  })
+
+  // Score por día para la gráfica de barras
+  const dayScores = days.map(d => ({
+    ...d,
+    score: data.habits.length > 0
+      ? Math.round(data.habits.filter(h => h.completedDays[d.key]).length / data.habits.length * 100)
+      : 0
+  }))
+
+  // Grupos de semanas para el subtítulo
+  const weeks = [1,2,3,4,5].map(w => ({
+    week: w,
+    label: `Semana ${w}`,
+    days: days.filter(d => d.weekNum === w),
+  })).filter(w => w.days.length > 0)
+
+  const categories = data.categories ?? []
+
+  // Hábitos agrupados por categoría, en el orden de categories
+  const habitsByCat: { cat: Category | null; habits: Habit[] }[] = []
+
+  // Primero las categorías definidas (en orden)
+  categories.forEach(cat => {
+    const hs = data.habits.filter(h => h.category === cat.name)
+    if (hs.length > 0) habitsByCat.push({ cat, habits: hs })
+  })
+
+  // Hábitos sin categoría reconocida (o sin categoría)
+  const knownCatNames = categories.map(c => c.name)
+  const uncategorized = data.habits.filter(h => !knownCatNames.includes(h.category))
+  if (uncategorized.length > 0) habitsByCat.push({ cat: null, habits: uncategorized })
+
+  // Si hay filtro activo, mostrar solo esa categoría
+  const groupsToShow = filterCat === 'all'
+    ? habitsByCat
+    : habitsByCat.filter(g => g.cat?.name === filterCat || (filterCat === '__sin__' && g.cat === null))
+
+  // ── Habit modal helpers ──
+  const openAdd = () => {
+    setForm({ ...emptyHabit(), category: categories[0]?.name ?? '' })
+    setEditingHabit(null)
+    setHabitModal('add')
+  }
+  const openEdit = (h: Habit) => {
+    setForm({ name: h.name, color: h.color, icon: h.icon, category: h.category, goal: h.goal, stack: h.stack })
+    setEditingHabit(h)
+    setHabitModal('edit')
+  }
+  const saveHabit = () => {
+    if (!form.name.trim()) return
+    if (habitModal === 'add') {
+      addHabit({ id: Date.now().toString(), ...form, completedDays: {}, createdAt: new Date().toISOString() })
+    } else if (editingHabit) {
+      updateHabit({ ...editingHabit, ...form })
+    }
+    setHabitModal(null)
+  }
+
+  // ── Category modal helpers ──
+  const openAddCat = () => { setCatForm({ name: '', color: '#7C6FFF' }); setEditingCat(null); setCatModal(true) }
+  const openEditCat = (c: Category) => { setCatForm({ name: c.name, color: c.color }); setEditingCat(c); setCatModal(true) }
+  const saveCat = () => {
+    if (!catForm.name.trim()) return
+    if (editingCat) updateCategory({ ...editingCat, ...catForm })
+    else addCategory({ id: Date.now().toString(), ...catForm })
+    setCatModal(false)
+  }
+
+  return (
+    <div style={{ padding: '32px 40px' }}>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div>
+          <h1 className="gradient-text-purple" style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>HÁBITOS</h1>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+            {data.habits.filter(h => h.completedDays[today]).length}/{data.habits.length} completados hoy
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {/* Month nav */}
+          <button className="btn-ghost" onClick={() => setViewMonth(new Date(year, month - 1, 1))} style={{ padding: '8px 12px' }}>‹</button>
+          <span style={{ fontWeight: 700, fontSize: 14, minWidth: 130, textAlign: 'center' }}>
+            {format(viewMonth, 'MMMM yyyy', { locale: es }).toUpperCase()}
+          </span>
+          <button className="btn-ghost" onClick={() => setViewMonth(new Date(year, month + 1, 1))} style={{ padding: '8px 12px' }}>›</button>
+          <button className="btn-ghost" onClick={() => setCatModal(true)} style={{ fontSize: 13 }}>⚙️ Categorías</button>
+          <button className="btn-primary" onClick={openAdd}>+ Hábito</button>
+        </div>
+      </div>
+
+      {/* ── Category filter pills ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        <button onClick={() => setFilterCat('all')} style={{
+          padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+          background: filterCat === 'all' ? 'var(--accent-purple)' : 'rgba(255,255,255,0.06)',
+          color: filterCat === 'all' ? 'white' : 'var(--text-secondary)',
+        }}>Todos ({data.habits.length})</button>
+        {categories.map(c => {
+          const count = data.habits.filter(h => h.category === c.name).length
+          return (
+            <button key={c.id} onClick={() => setFilterCat(c.name)} style={{
+              padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              background: filterCat === c.name ? c.color : 'rgba(255,255,255,0.06)',
+              color: filterCat === c.name ? 'white' : 'var(--text-secondary)',
+              boxShadow: filterCat === c.name ? `0 0 14px ${c.color}55` : 'none',
+              transition: 'all 0.15s',
+            }}>{c.name} ({count})</button>
+          )
+        })}
+      </div>
+
+      {/* ── Una sola tabla: header + grupos en tbody ── */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: '0 3px', minWidth: 900, width: '100%', tableLayout: 'fixed' }}>
+
+          {/* Definición de anchos de columna — garantiza alineación perfecta */}
+          <colgroup>
+            <col style={{ width: 240 }} />
+            {days.map(d => <col key={d.key} style={{ width: 44 }} />)}
+            <col style={{ width: 64 }} />
+            <col style={{ width: 74 }} />
+            <col style={{ width: 64 }} />
+            <col style={{ width: 64 }} />
+          </colgroup>
+
+          <thead>
+            {/* ── Fila barras de cumplimiento diario ── */}
+            <tr>
+              <th style={{ textAlign: 'left', padding: '0 12px 6px', fontSize: 9, color: 'var(--text-muted)', fontWeight: 500 }}>
+                % DIARIO
+              </th>
+              {dayScores.map(d => {
+                const pct = d.score
+                const maxBarH = 72
+                const barH = pct > 0 ? Math.max(6, Math.round(pct / 100 * maxBarH)) : 4
+                const color = pct >= 80 ? 'var(--accent-teal)' : pct >= 50 ? 'var(--accent-purple)' : pct > 0 ? '#FFD93D' : 'rgba(255,255,255,0.10)'
+                const isToday = d.key === today
+                return (
+                  <th key={d.key} style={{ padding: '0 1px 0', verticalAlign: 'bottom', height: maxBarH + 22 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: maxBarH + 22, gap: 2 }}>
+                      {pct > 0 && (
+                        <div style={{ fontSize: 11, color: isToday ? 'var(--accent-purple)' : pct >= 80 ? 'var(--accent-teal)' : 'var(--text-muted)', fontWeight: 700, lineHeight: 1 }}>
+                          {pct}%
+                        </div>
+                      )}
+                      <div style={{
+                        width: 32, height: barH,
+                        background: isToday ? 'linear-gradient(180deg, var(--accent-purple), var(--accent-teal))' : color,
+                        borderRadius: '4px 4px 0 0',
+                        boxShadow: isToday ? '0 0 12px rgba(124,111,255,0.8)' : pct >= 80 ? `0 0 8px rgba(0,229,184,0.5)` : 'none',
+                        transition: 'height 0.4s ease',
+                      }} />
+                    </div>
+                  </th>
+                )
+              })}
+              <th colSpan={4} />
+            </tr>
+
+            {/* ── Fila semanas — pegada a los días ── */}
+            <tr>
+              <th />
+              {weeks.map(w => (
+                <th key={w.week} colSpan={w.days.length} style={{
+                  textAlign: 'center', padding: '6px 2px 2px',
+                  fontSize: 10, fontWeight: 800, letterSpacing: 1.5,
+                  color: 'var(--accent-purple)',
+                  borderBottom: '1px solid rgba(124,111,255,0.3)',
+                }}>
+                  SEM {w.week}
+                </th>
+              ))}
+              <th colSpan={4} />
+            </tr>
+
+            {/* ── Fila días (letra + número) ── */}
+            <tr>
+              <th style={{ textAlign: 'left', padding: '4px 12px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1 }}>HÁBITO</th>
+              {days.map(d => (
+                <th key={d.key} style={{
+                  textAlign: 'center', padding: '4px 0', fontSize: 11,
+                  color: d.key === today ? 'var(--accent-purple)' : 'var(--text-muted)',
+                  fontWeight: d.key === today ? 900 : 400,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{d.dow}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{d.n}</div>
+                </th>
+              ))}
+              <th style={{ textAlign: 'center', fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>META</th>
+              <th style={{ textAlign: 'center', fontSize: 10, color: 'var(--text-muted)' }}>CUMPL.</th>
+              <th style={{ textAlign: 'center', fontSize: 10, color: 'var(--text-muted)' }}>RACHA</th>
+              <th />
+            </tr>
+          </thead>
+
+          <tbody>
+            {groupsToShow.map(({ cat, habits: groupHabits }) => {
+              const catColor = cat?.color ?? '#888'
+              const catDone  = groupHabits.filter(h => h.completedDays[today]).length
+              const catTotal = groupHabits.length
+              const catPct   = Math.round(catDone / catTotal * 100)
+              const colSpanAll = days.length + 5
+
+              return [
+                /* ── Fila separadora de categoría ── */
+                <tr key={`cat-${cat?.id ?? '__sin__'}`}>
+                  <td colSpan={colSpanAll} style={{ padding: '12px 0 4px' }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '6px 14px 6px 10px',
+                      borderLeft: `4px solid ${catColor}`,
+                      background: `${catColor}0D`,
+                      borderRadius: '0 8px 8px 0',
+                    }}>
+                      <span style={{ fontSize: 22, fontWeight: 900, color: catColor, letterSpacing: -0.5 }}>{cat?.name ?? 'Sin categoría'}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{catDone}/{catTotal} hoy</span>
+                      <div style={{ width: 80, background: 'rgba(255,255,255,0.06)', borderRadius: 99, height: 5 }}>
+                        <div style={{ height: '100%', width: `${catPct}%`, background: catColor, borderRadius: 99, transition: 'width 0.4s', boxShadow: catPct === 100 ? `0 0 8px ${catColor}` : 'none' }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: catPct === 100 ? catColor : 'var(--text-muted)' }}>
+                        {catPct === 100 ? '✅ 100%' : `${catPct}%`}
+                      </span>
+                      <button
+                        onClick={() => { setForm({ ...emptyHabit(), category: cat?.name ?? '' }); setEditingHabit(null); setHabitModal('add') }}
+                        style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${catColor}55`, borderRadius: 6, cursor: 'pointer', color: catColor, fontSize: 11, fontWeight: 700, padding: '3px 8px' }}
+                      >+ hábito</button>
+                    </div>
+                  </td>
+                </tr>,
+
+                /* ── Filas de hábitos del grupo ── */
+                ...groupHabits.map(h => {
+                  const streak = getStreak(h)
+                  const done   = getHabitMonthDone(h, year, month)
+                  const pct    = getHabitMonthPct(h, year, month)
+                  return (
+                    <tr key={h.id} style={{ background: 'rgba(255,255,255,0.025)' }}>
+                      <td style={{ padding: '7px 12px', borderRadius: '8px 0 0 8px', borderLeft: `3px solid ${h.color}`, overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                          <span style={{ fontSize: 18, flexShrink: 0 }}>{h.icon}</span>
+                          <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
+                            {h.stack && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 99, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.stack}</span>}
+                          </div>
+                        </div>
+                      </td>
+
+                      {days.map(d => {
+                        const checked = !!h.completedDays[d.key]
+                        const isToday = d.key === today
+                        return (
+                          <td key={d.key} style={{ textAlign: 'center', padding: '3px 0' }}>
+                            <button onClick={() => toggleHabit(h.id, d.key)} style={{
+                              width: 28, height: 28, borderRadius: 6, border: 'none', cursor: 'pointer',
+                              background: checked ? h.color : 'rgba(255,255,255,0.05)',
+                              boxShadow: checked ? `0 0 8px ${h.color}77` : 'none',
+                              outline: isToday ? `2px solid ${h.color}99` : 'none',
+                              transition: 'all 0.1s ease', fontSize: 10, color: 'white',
+                            }}>{checked && '✓'}</button>
+                          </td>
+                        )
+                      })}
+
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{done}/{h.goal}</span>
+                      </td>
+
+                      <td style={{ textAlign: 'center', padding: '3px 4px' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: pct >= 100 ? 'var(--accent-gold)' : pct >= 70 ? 'var(--accent-teal)' : pct >= 40 ? 'var(--accent-purple)' : 'var(--text-muted)', marginBottom: 3 }}>
+                          {pct >= 100 ? '🏆' : `${pct}%`}
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 99, height: 4, margin: '0 auto', width: 44 }}>
+                          <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 100 ? 'var(--accent-gold)' : pct >= 70 ? 'var(--accent-teal)' : 'var(--accent-purple)', borderRadius: 99, transition: 'width 0.4s' }} />
+                        </div>
+                      </td>
+
+                      <td style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: streak >= 7 ? 'var(--accent-gold)' : streak > 0 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
+                        {streak > 0 ? `🔥${streak}` : '—'}
+                      </td>
+
+                      <td style={{ textAlign: 'center', borderRadius: '0 8px 8px 0', paddingRight: 4 }}>
+                        <div style={{ display: 'flex', gap: 0, justifyContent: 'center' }}>
+                          <button onClick={() => openEdit(h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '2px 3px' }}>✏️</button>
+                          <button onClick={() => deleteHabit(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '2px 3px', opacity: 0.4 }}>✕</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }),
+              ]
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ── Habit Modal (Add / Edit) ── */}
+      {habitModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(6px)' }}>
+          <div className="card" style={{ width: 460, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 20 }}>
+              {habitModal === 'add' ? '+ Nuevo Hábito' : '✏️ Editar Hábito'}
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Name */}
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>NOMBRE</div>
+                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nombre del hábito" className="input-glass" />
+              </div>
+
+              {/* Category */}
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>CATEGORÍA</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {categories.map(c => (
+                    <button key={c.id} onClick={() => setForm(p => ({ ...p, category: c.name }))} style={{
+                      padding: '6px 12px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                      background: form.category === c.name ? c.color : 'rgba(255,255,255,0.06)',
+                      color: form.category === c.name ? 'white' : 'var(--text-secondary)',
+                      transition: 'all 0.1s',
+                    }}>{c.name}</button>
+                  ))}
+                  <button onClick={() => { setCatModal(true); setHabitModal(null) }} style={{ padding: '6px 12px', borderRadius: 99, border: '1px dashed var(--border-bright)', background: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)' }}>+ Nueva</button>
+                </div>
+              </div>
+
+              {/* Stack */}
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>MOMENTO DEL DÍA</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {STACKS.map(s => (
+                    <button key={s} onClick={() => setForm(p => ({ ...p, stack: s }))} style={{
+                      padding: '6px 12px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                      background: form.stack === s ? 'rgba(124,111,255,0.3)' : 'rgba(255,255,255,0.06)',
+                      color: form.stack === s ? 'var(--accent-purple)' : 'var(--text-secondary)',
+                      outline: form.stack === s ? '1px solid var(--accent-purple)' : 'none',
+                    }}>{s}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Goal */}
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>META MENSUAL (días)</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input
+                    type="range" min={1} max={31} value={form.goal}
+                    onChange={e => setForm(p => ({ ...p, goal: Number(e.target.value) }))}
+                    style={{ flex: 1, accentColor: 'var(--accent-purple)' }}
+                  />
+                  <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--accent-purple)', minWidth: 40, textAlign: 'center' }}>{form.goal}</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {form.goal === 31 ? 'Todos los días del mes' : form.goal >= 20 ? 'Casi todos los días' : form.goal >= 10 ? 'Varias veces por semana' : 'Pocas veces al mes'}
+                </div>
+              </div>
+
+              {/* Icon */}
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>ICONO</div>
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  {ICONS.map(ic => (
+                    <button key={ic} onClick={() => setForm(p => ({ ...p, icon: ic }))} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 18, background: form.icon === ic ? 'rgba(124,111,255,0.3)' : 'rgba(255,255,255,0.05)', outline: form.icon === ic ? '2px solid var(--accent-purple)' : 'none', transition: 'all 0.1s' }}>{ic}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color */}
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>COLOR</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {COLORS.map(c => (
+                    <button key={c} onClick={() => setForm(p => ({ ...p, color: c }))} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: form.color === c ? '3px solid white' : '3px solid transparent', cursor: 'pointer', boxShadow: form.color === c ? `0 0 10px ${c}` : 'none', transition: 'all 0.1s' }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button className="btn-ghost" onClick={() => setHabitModal(null)} style={{ flex: 1 }}>Cancelar</button>
+                <button className="btn-primary" onClick={saveHabit} style={{ flex: 2 }}>
+                  {habitModal === 'add' ? '+ Agregar' : '✓ Guardar cambios'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Category Modal ── */}
+      {catModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001, backdropFilter: 'blur(6px)' }}>
+          <div className="card" style={{ width: 420, padding: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 20 }}>⚙️ Categorías</h2>
+
+            {/* List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+              {categories.map(c => (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, borderLeft: `3px solid ${c.color}` }}>
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{c.name}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{data.habits.filter(h => h.category === c.name).length} hábitos</span>
+                  <button onClick={() => openEditCat(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text-muted)', padding: '2px 4px' }}>✏️</button>
+                  <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text-muted)', padding: '2px 4px', opacity: 0.5 }}>✕</button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add/Edit form */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>{editingCat ? 'EDITAR CATEGORÍA' : 'NUEVA CATEGORÍA'}</div>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                <input value={catForm.name} onChange={e => setCatForm(p => ({ ...p, name: e.target.value }))} placeholder="Nombre de la categoría" className="input-glass" style={{ flex: 1 }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                {COLORS.map(c => (
+                  <button key={c} onClick={() => setCatForm(p => ({ ...p, color: c }))} style={{ width: 26, height: 26, borderRadius: '50%', background: c, border: catForm.color === c ? '3px solid white' : '3px solid transparent', cursor: 'pointer', boxShadow: catForm.color === c ? `0 0 8px ${c}` : 'none' }} />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button className="btn-ghost" onClick={() => { setCatModal(false); setEditingCat(null) }} style={{ flex: 1 }}>Cerrar</button>
+                <button className="btn-primary" onClick={saveCat} style={{ flex: 1 }}>{editingCat ? 'Guardar' : '+ Agregar'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
