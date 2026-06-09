@@ -16,15 +16,17 @@ export default function AuthPage() {
     if (!email || !password) { setError('Completa todos los campos'); setLoading(false); return }
 
     if (mode === 'register') {
-      const { error: e } = await supabase.auth.signUp({
+      const { data: d, error: e } = await supabase.auth.signUp({
         email, password,
         options: { data: { full_name: name } }
       })
       if (e) setError(e.message)
-      else setMsg('¡Cuenta creada! Revisa tu email para confirmar.')
+      else if (d.session) window.location.href = '/'
+      else setMsg('¡Cuenta creada! Ya puedes entrar con tu email y contraseña.')
     } else {
-      const { error: e } = await supabase.auth.signInWithPassword({ email, password })
+      const { data: d, error: e } = await supabase.auth.signInWithPassword({ email, password })
       if (e) setError(e.message)
+      else if (d.session) window.location.href = '/'
     }
     setLoading(false)
   }
