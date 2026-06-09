@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppData, Reward } from '@/lib/store'
 
 const ICONS = ['📺', '🍕', '😴', '🛍️', '🎮', '🍫', '🏖️', '🎬', '🥂', '🍔', '💆', '🎯']
@@ -9,6 +9,7 @@ export default function RewardsPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [newReward, setNewReward] = useState({ title: '', cost: 50, icon: '🎁' })
   const [identityInput, setIdentityInput] = useState(data.identity)
+  useEffect(() => { setIdentityInput(data.identity) }, [data.identity])
 
   const IDENTITIES = ['Atleta de Élite', 'Trader Profesional', 'Máquina de Hábitos', 'Guerrero Mental', 'Billonario', 'Imparable']
 

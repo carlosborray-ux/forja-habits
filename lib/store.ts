@@ -199,7 +199,7 @@ export function useAppData() {
       if (syncTimer.current) clearTimeout(syncTimer.current)
       syncTimer.current = setTimeout(async () => {
         await supabase.from('user_data').upsert({ user_id: userId, data, updated_at: new Date().toISOString() })
-      }, 1500)
+      }, 500)
     }
   }, [data, loaded, userId])
 
