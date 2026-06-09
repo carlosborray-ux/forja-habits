@@ -276,7 +276,7 @@ export default function HabitsPage() {
                   const pct    = getHabitMonthPct(h, year, month)
                   return (
                     <tr key={h.id} style={{ background: 'rgba(255,255,255,0.025)' }}>
-                      <td style={{ padding: '7px 12px', borderRadius: '8px 0 0 8px', borderLeft: `3px solid ${h.color}`, overflow: 'hidden' }}>
+                      <td style={{ padding: '9px 12px', borderRadius: '8px 0 0 8px', borderLeft: `3px solid ${h.color}`, overflow: 'hidden' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                           <span style={{ fontSize: 18, flexShrink: 0 }}>{h.icon}</span>
                           <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -290,14 +290,35 @@ export default function HabitsPage() {
                         const checked = !!h.completedDays[d.key]
                         const isToday = d.key === today
                         return (
-                          <td key={d.key} style={{ textAlign: 'center', padding: '3px 0' }}>
+                          <td key={d.key} style={{ textAlign: 'center', padding: '2px 0' }}>
                             <button onClick={() => toggleHabit(h.id, d.key)} style={{
-                              width: 28, height: 28, borderRadius: 6, border: 'none', cursor: 'pointer',
-                              background: checked ? h.color : 'rgba(255,255,255,0.05)',
-                              boxShadow: checked ? `0 0 8px ${h.color}77` : 'none',
-                              outline: isToday ? `2px solid ${h.color}99` : 'none',
-                              transition: 'all 0.1s ease', fontSize: 10, color: 'white',
-                            }}>{checked && '✓'}</button>
+                              width: 32, height: 32, borderRadius: 8,
+                              border: checked
+                                ? 'none'
+                                : isToday
+                                  ? `2px solid ${h.color}`
+                                  : '2px solid rgba(255,255,255,0.13)',
+                              cursor: 'pointer',
+                              background: checked
+                                ? `linear-gradient(135deg, ${h.color}dd, ${h.color}99)`
+                                : isToday
+                                  ? `${h.color}18`
+                                  : 'rgba(255,255,255,0.04)',
+                              boxShadow: checked
+                                ? `0 0 12px ${h.color}66, inset 0 1px 0 rgba(255,255,255,0.25)`
+                                : isToday
+                                  ? `0 0 8px ${h.color}33`
+                                  : 'none',
+                              transition: 'all 0.15s ease',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, margin: '0 auto',
+                            }}>
+                              {checked && (
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                  <path d="M2 7L5.5 10.5L12 3.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
+                            </button>
                           </td>
                         )
                       })}
