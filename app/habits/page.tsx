@@ -289,41 +289,31 @@ export default function HabitsPage() {
                       {(() => {
                         const catColor = data.categories.find(c => c.name === h.category)?.color ?? h.color
                         return days.map(d => {
-                        const checked = !!h.completedDays[d.key]
-                        const isToday = d.key === today
-                        return (
-                          <td key={d.key} style={{ textAlign: 'center', padding: '4px 0' }}>
-                            <button onClick={() => toggleHabit(h.id, d.key)} style={{
-                              width: 40, height: 40, borderRadius: 12,
-                              border: checked
-                                ? 'none'
-                                : isToday
-                                  ? `2px solid ${catColor}`
-                                  : '2px solid rgba(255,255,255,0.12)',
-                              cursor: 'pointer',
-                              background: checked
-                                ? catColor
-                                : isToday
-                                  ? `${catColor}15`
-                                  : 'rgba(255,255,255,0.04)',
-                              boxShadow: checked
-                                ? `0 0 16px ${catColor}88`
-                                : 'none',
-                              transition: 'all 0.15s ease',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              margin: '0 auto',
-                            }}>
-                              {checked && (
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                  <path d="M3 9L7 13L15 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              )}
-                            </button>
-                          </td>
-                        )
-                      })}
-                        )
+                          const checked = !!h.completedDays[d.key]
+                          const isToday = d.key === today
+                          return (
+                            <td key={d.key} style={{ textAlign: 'center', padding: '4px 0' }}>
+                              <button onClick={() => toggleHabit(h.id, d.key)} style={{
+                                width: 40, height: 40, borderRadius: 12,
+                                border: checked ? 'none' : isToday ? `2px solid ${catColor}` : '2px solid rgba(255,255,255,0.12)',
+                                cursor: 'pointer',
+                                background: checked ? catColor : isToday ? `${catColor}15` : 'rgba(255,255,255,0.04)',
+                                boxShadow: checked ? `0 0 16px ${catColor}88` : 'none',
+                                transition: 'all 0.15s ease',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                margin: '0 auto',
+                              }}>
+                                {checked && (
+                                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path d="M3 9L7 13L15 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                )}
+                              </button>
+                            </td>
+                          )
+                        })
                       })()}
+
 
                       <td style={{ textAlign: 'center' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{done}/{h.goal}</span>
