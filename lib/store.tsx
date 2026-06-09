@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useContext, createContext } from 'react'
 import { supabase } from './supabase'
 
 export interface Habit {
@@ -121,21 +121,49 @@ const DEFAULT_DATA: AppData = {
   identity: 'Élite',
 }
 
+// ── Tipos del contexto ──────────────────────────────────
+type AppContextType = ReturnType<typeof useAppDataInternal>
+const AppContext = createContext<AppContextType | null>(null)
+
+// ── Provider — úsalo en AppShell ────────────────────────
+export function AppDataProvider({ children }: { children: React.ReactNode }) {
+  const value = useAppDataInternal()
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+}
+
+// ── Hook público ────────────────────────────────────────
 export function useAppData() {
+  const ctx = useContext(AppContext)
+  if (!ctx) throw new Error('useAppData debe usarse dentro de AppDataProvider')
+  return ctx
+}
+
+// ── Lógica interna (solo se instancia UNA vez en el Provider) ──
+function useAppDataInternal() {
   const [data, setData]     = useState<AppData>(DEFAULT_DATA)
   const [loaded, setLoaded] = useState(false)
-  const [userId, setUserId] = useState<string | null>(null)
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Carga inicial ──────────────────────────────────────
   useEffect(() => {
     const init = async () => {
-      // 1. Verificar sesión activa
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
-        setUserId(session.user.id)
-        // 2. Cargar datos desde Supabase
+        // Primero cargamos localStorage para mostrar datos al instante
+        const cached = localStorage.getItem('habit-tracker-v2')
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            setData(prev => ({
+              ...prev, ...parsed,
+              categories: parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES,
+              rewards:    parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS,
+            }))
+          } catch {}
+        }
+
+        // Luego sincronizamos con Supabase (source of truth)
         const { data: row } = await supabase
           .from('user_data')
           .select('data')
@@ -150,11 +178,9 @@ export function useAppData() {
             rewards:    parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS,
           }))
         } else {
-          // Primera vez: guardar defaults en Supabase
           await supabase.from('user_data').upsert({ user_id: session.user.id, data: DEFAULT_DATA })
         }
       } else {
-        // Sin sesión: usar localStorage
         const saved = localStorage.getItem('habit-tracker-v2')
         if (saved) {
           try {
@@ -166,7 +192,6 @@ export function useAppData() {
             }))
           } catch {}
         }
-        // Redirigir a login (solo si no estamos ya en /auth)
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
           window.location.href = '/auth'
         }
@@ -175,16 +200,9 @@ export function useAppData() {
     }
     init()
 
-    // Escuchar cambios de auth (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setUserId(session.user.id)
-        window.location.href = '/'
-      }
-      if (event === 'SIGNED_OUT') {
-        setUserId(null)
-        window.location.href = '/auth'
-      }
+      if (event === 'SIGNED_IN' && session) window.location.href = '/'
+      if (event === 'SIGNED_OUT') window.location.href = '/auth'
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -221,33 +239,30 @@ export function useAppData() {
     })
   }
 
-  const addWeight      = (e: WeightEntry) => setData(prev => ({ ...prev, weights: [...prev.weights.filter(w => w.date !== e.date), e].sort((a,b) => a.date.localeCompare(b.date)) }))
-  const saveJournal    = (date: string, e: JournalEntry) => setData(prev => ({ ...prev, journal: { ...prev.journal, [date]: e } }))
+  const addWeight         = (e: WeightEntry) => setData(prev => ({ ...prev, weights: [...prev.weights.filter(w => w.date !== e.date), e].sort((a,b) => a.date.localeCompare(b.date)) }))
+  const saveJournal       = (date: string, e: JournalEntry) => setData(prev => ({ ...prev, journal: { ...prev.journal, [date]: e } }))
   const addAgendaBlock    = (b: AgendaBlock) => setData(prev => ({ ...prev, agenda: [...prev.agenda, b] }))
   const updateAgendaBlock = (b: AgendaBlock) => setData(prev => ({ ...prev, agenda: prev.agenda.map(x => x.id === b.id ? b : x) }))
-  const deleteAgendaBlock = (id: string) => setData(prev => ({ ...prev, agenda: prev.agenda.filter(b => b.id !== id) }))
-  const toggleAgenda      = (id: string) => setData(prev => ({ ...prev, agenda: prev.agenda.map(b => b.id === id ? { ...b, done: !b.done } : b) }))
-  const addHabit       = (h: Habit) => setData(prev => ({ ...prev, habits: [...prev.habits, h] }))
-  const updateHabit    = (h: Habit) => setData(prev => ({ ...prev, habits: prev.habits.map(x => x.id === h.id ? h : x) }))
-  const deleteHabit    = (id: string) => setData(prev => ({ ...prev, habits: prev.habits.filter(h => h.id !== id) }))
-  const setIdentity    = (i: string) => setData(prev => ({ ...prev, identity: i }))
-  const addReward      = (r: Reward) => setData(prev => ({ ...prev, rewards: [...prev.rewards, r] }))
-  const deleteReward   = (id: string) => setData(prev => ({ ...prev, rewards: prev.rewards.filter(r => r.id !== id) }))
-  const redeemReward   = (id: string) => setData(prev => {
+  const deleteAgendaBlock = (id: string)     => setData(prev => ({ ...prev, agenda: prev.agenda.filter(b => b.id !== id) }))
+  const toggleAgenda      = (id: string)     => setData(prev => ({ ...prev, agenda: prev.agenda.map(b => b.id === id ? { ...b, done: !b.done } : b) }))
+  const addHabit          = (h: Habit)       => setData(prev => ({ ...prev, habits: [...prev.habits, h] }))
+  const updateHabit       = (h: Habit)       => setData(prev => ({ ...prev, habits: prev.habits.map(x => x.id === h.id ? h : x) }))
+  const deleteHabit       = (id: string)     => setData(prev => ({ ...prev, habits: prev.habits.filter(h => h.id !== id) }))
+  const setIdentity       = (i: string)      => setData(prev => ({ ...prev, identity: i }))
+  const addReward         = (r: Reward)      => setData(prev => ({ ...prev, rewards: [...prev.rewards, r] }))
+  const deleteReward      = (id: string)     => setData(prev => ({ ...prev, rewards: prev.rewards.filter(r => r.id !== id) }))
+  const redeemReward      = (id: string)     => setData(prev => {
     const r = prev.rewards.find(r => r.id === id)
     if (!r || prev.gold < r.cost) return prev
     return { ...prev, gold: prev.gold - r.cost, rewards: prev.rewards.map(rw => rw.id === id ? { ...rw, redeemed: true } : rw) }
   })
-  const setWater = (date: string, glasses: number) => setData(prev => ({
-    ...prev, water: { ...prev.water, [date]: { date, glasses, goal: 8 } }
-  }))
-  const addCategory    = (c: Category) => setData(prev => ({ ...prev, categories: [...prev.categories, c] }))
-  const updateCategory = (c: Category) => setData(prev => ({ ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x) }))
-  const deleteCategory = (id: string) => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
+  const setWater          = (date: string, glasses: number) => setData(prev => ({ ...prev, water: { ...prev.water, [date]: { date, glasses, goal: 8 } } }))
+  const addCategory       = (c: Category)   => setData(prev => ({ ...prev, categories: [...prev.categories, c] }))
+  const updateCategory    = (c: Category)   => setData(prev => ({ ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x) }))
+  const deleteCategory    = (id: string)    => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
+  const logout            = ()              => supabase.auth.signOut()
 
-  const logout = () => supabase.auth.signOut()
-
-  return { data, loaded, userId, logout, toggleHabit, addWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
+  return { data, loaded, logout, toggleHabit, addWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
 }
 
 export const getTodayKey  = () => new Date().toISOString().split('T')[0]
@@ -269,7 +284,6 @@ export function getDayScore(habits: Habit[], dateKey: string): number {
   return Math.round(habits.filter(h => h.completedDays[dateKey]).length / habits.length * 100)
 }
 
-/** Cumplimiento de un hábito en un mes dado vs su meta individual */
 export function getHabitMonthPct(habit: Habit, year: number, month: number): number {
   if (habit.goal <= 0) return 0
   const daysInMonth = new Date(year, month + 1, 0).getDate()
