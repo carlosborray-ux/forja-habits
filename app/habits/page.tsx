@@ -129,6 +129,86 @@ export default function HabitsPage() {
         </div>
       </div>
 
+      {/* ── Gráfico de línea mensual ── */}
+      {(() => {
+        const W = 900, H = 110, PAD = { top: 20, right: 16, bottom: 28, left: 36 }
+        const innerW = W - PAD.left - PAD.right
+        const innerH = H - PAD.top - PAD.bottom
+        const pts = dayScores.map((d, i) => ({
+          x: PAD.left + (i / (dayScores.length - 1 || 1)) * innerW,
+          y: PAD.top + innerH - (d.score / 100) * innerH,
+          score: d.score,
+          key: d.key,
+          n: d.n,
+        }))
+        const todayIdx = dayScores.findIndex(d => d.key === today)
+        const polyline = pts.map(p => `${p.x},${p.y}`).join(' ')
+        // Área rellena debajo
+        const areaPath = `M${pts[0].x},${PAD.top + innerH} ` +
+          pts.map(p => `L${p.x},${p.y}`).join(' ') +
+          ` L${pts[pts.length - 1].x},${PAD.top + innerH} Z`
+        return (
+          <div className="card" style={{ marginBottom: 20, padding: '14px 16px 8px', overflow: 'hidden' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>
+              PROGRESO DEL MES — {format(viewMonth, 'MMMM yyyy', { locale: es }).toUpperCase()}
+              <span style={{ marginLeft: 12, color: 'var(--accent-teal)', fontWeight: 700 }}>
+                {Math.round(dayScores.filter(d => d.score > 0).reduce((a, d) => a + d.score, 0) / (dayScores.filter(d => d.score > 0).length || 1))}% promedio
+              </span>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FF4FA3" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#FF4FA3" stopOpacity="0.01" />
+                </linearGradient>
+              </defs>
+              {/* Grid horizontales */}
+              {[0, 25, 50, 75, 100].map(v => {
+                const gy = PAD.top + innerH - (v / 100) * innerH
+                return (
+                  <g key={v}>
+                    <line x1={PAD.left} x2={W - PAD.right} y1={gy} y2={gy} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                    <text x={PAD.left - 4} y={gy + 4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.25)">{v}</text>
+                  </g>
+                )
+              })}
+              {/* Área rellena */}
+              <path d={areaPath} fill="url(#lineGrad)" />
+              {/* Línea principal */}
+              <polyline points={polyline} fill="none" stroke="#FF4FA3" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+              {/* Puntos y etiquetas de días */}
+              {pts.map((p, i) => {
+                const isToday = i === todayIdx
+                const hasDot = dayScores[i].score > 0 || isToday
+                return (
+                  <g key={p.key}>
+                    {hasDot && (
+                      <circle cx={p.x} cy={p.y} r={isToday ? 5 : 3}
+                        fill={isToday ? '#7C6FFF' : '#FF4FA3'}
+                        stroke={isToday ? '#fff' : 'transparent'} strokeWidth="1.5"
+                        style={{ filter: isToday ? 'drop-shadow(0 0 6px #7C6FFF)' : 'none' }}
+                      />
+                    )}
+                    {/* Número del día */}
+                    <text x={p.x} y={H - 4} textAnchor="middle" fontSize="8"
+                      fill={isToday ? 'var(--accent-purple)' : 'rgba(255,255,255,0.25)'}
+                      fontWeight={isToday ? '800' : '400'}
+                    >{p.n}</text>
+                  </g>
+                )
+              })}
+              {/* Etiqueta hoy */}
+              {todayIdx >= 0 && (
+                <text x={pts[todayIdx].x} y={pts[todayIdx].y - 9} textAnchor="middle" fontSize="9"
+                  fill="var(--accent-purple)" fontWeight="800">
+                  {dayScores[todayIdx].score}%
+                </text>
+              )}
+            </svg>
+          </div>
+        )
+      })()}
+
       {/* ── Category filter pills ── */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         <button onClick={() => setFilterCat('all')} style={{
