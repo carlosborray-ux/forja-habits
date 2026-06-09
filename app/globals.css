@@ -221,3 +221,67 @@ html, body {
   padding: 3px 10px; border-radius: 99px;
   font-size: 11px; font-weight: 700;
 }
+
+/* ════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Sidebar oculta en mobile */
+  aside { display: none !important; }
+
+  /* Main sin margen izquierdo, con espacio abajo para bottom nav */
+  main { margin-left: 0 !important; padding-bottom: 72px !important; }
+
+  /* Bottom nav */
+  .bottom-nav {
+    display: flex !important;
+  }
+
+  /* Páginas: menos padding */
+  .page-content {
+    padding: 20px 16px !important;
+  }
+
+  /* Grids → columna única en mobile */
+  .grid-stats {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Header rows → columna */
+  .page-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* Cards con menos padding */
+  .card { padding: 14px !important; }
+
+  /* Tabla de hábitos — scroll horizontal */
+  .habits-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Agenda calendario semanal — scroll */
+  .agenda-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Bottom nav — oculta en desktop por defecto */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: rgba(10,10,20,0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  z-index: 300;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 4px;
+}

@@ -108,7 +108,7 @@ export default function HabitsPage() {
   }
 
   return (
-    <div style={{ padding: '32px 40px' }}>
+    <div className="page-content" style={{ padding: '32px 40px' }}>
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
@@ -151,7 +151,7 @@ export default function HabitsPage() {
       </div>
 
       {/* ── Una sola tabla: header + grupos en tbody ── */}
-      <div style={{ overflowX: 'auto' }}>
+      <div className="habits-scroll" style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: '0 3px', minWidth: 900, width: '100%', tableLayout: 'fixed' }}>
 
           {/* Definición de anchos de columna — garantiza alineación perfecta */}

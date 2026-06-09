@@ -48,7 +48,7 @@ export default function WarRoom() {
   )
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1200 }}>
+    <div className="page-content" style={{ padding: '32px 40px', maxWidth: 1200 }}>
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 28 }}>
@@ -69,7 +69,7 @@ export default function WarRoom() {
       </div>
 
       {/* ── Row 1: Ring + XP + Boss ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '180px 1fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Score ring */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '24px 16px' }}>
@@ -143,7 +143,7 @@ export default function WarRoom() {
       </div>
 
       {/* ── Row 2: Last 7 days + Categories ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Last 7 days bar chart */}
         <div className="card">
