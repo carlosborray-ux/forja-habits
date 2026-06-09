@@ -24,7 +24,7 @@ export default function AuthPage() {
       else setMsg('¡Cuenta creada! Revisa tu email para confirmar.')
     } else {
       const { error: e } = await supabase.auth.signInWithPassword({ email, password })
-      if (e) setError('Email o contraseña incorrectos')
+      if (e) setError(e.message)
     }
     setLoading(false)
   }
