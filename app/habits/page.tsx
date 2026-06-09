@@ -156,8 +156,8 @@ export default function HabitsPage() {
 
           {/* Definición de anchos de columna — garantiza alineación perfecta */}
           <colgroup>
-            <col style={{ width: 240 }} />
-            {days.map(d => <col key={d.key} style={{ width: 44 }} />)}
+            <col style={{ width: 220 }} />
+            {days.map(d => <col key={d.key} style={{ width: 54 }} />)}
             <col style={{ width: 64 }} />
             <col style={{ width: 74 }} />
             <col style={{ width: 64 }} />
@@ -290,32 +290,30 @@ export default function HabitsPage() {
                         const checked = !!h.completedDays[d.key]
                         const isToday = d.key === today
                         return (
-                          <td key={d.key} style={{ textAlign: 'center', padding: '2px 0' }}>
+                          <td key={d.key} style={{ textAlign: 'center', padding: '4px 0' }}>
                             <button onClick={() => toggleHabit(h.id, d.key)} style={{
-                              width: 32, height: 32, borderRadius: 8,
+                              width: 40, height: 40, borderRadius: 12,
                               border: checked
                                 ? 'none'
                                 : isToday
                                   ? `2px solid ${h.color}`
-                                  : '2px solid rgba(255,255,255,0.13)',
+                                  : '2px solid rgba(255,255,255,0.12)',
                               cursor: 'pointer',
                               background: checked
-                                ? `linear-gradient(135deg, ${h.color}dd, ${h.color}99)`
+                                ? h.color
                                 : isToday
-                                  ? `${h.color}18`
+                                  ? `${h.color}15`
                                   : 'rgba(255,255,255,0.04)',
                               boxShadow: checked
-                                ? `0 0 12px ${h.color}66, inset 0 1px 0 rgba(255,255,255,0.25)`
-                                : isToday
-                                  ? `0 0 8px ${h.color}33`
-                                  : 'none',
+                                ? `0 0 16px ${h.color}88`
+                                : 'none',
                               transition: 'all 0.15s ease',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0, margin: '0 auto',
+                              margin: '0 auto',
                             }}>
                               {checked && (
-                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                  <path d="M2 7L5.5 10.5L12 3.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                  <path d="M3 9L7 13L15 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                               )}
                             </button>
