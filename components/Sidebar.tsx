@@ -1,6 +1,7 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAppData } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
 
 const NAV = [
   { path: '/',             icon: '⚔️',  label: 'Dashboard' },
@@ -87,12 +88,18 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Identity badge */}
+      {/* Identity badge + logout */}
       <div style={{ padding: '12px 20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>IDENTIDAD</div>
-        <div style={{ fontSize: 13, fontWeight: 700 }} className="gradient-text-pink">
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }} className="gradient-text-pink">
           🔥 {data.identity}
         </div>
+        <button onClick={() => supabase.auth.signOut()} style={{
+          width: '100%', padding: '7px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12,
+        }}>
+          Cerrar sesión
+        </button>
       </div>
     </aside>
   )

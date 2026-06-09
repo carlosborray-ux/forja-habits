@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { supabase } from './supabase'
 
 export interface Habit {
   id: string
@@ -121,29 +122,84 @@ const DEFAULT_DATA: AppData = {
 }
 
 export function useAppData() {
-  const [data, setData] = useState<AppData>(DEFAULT_DATA)
+  const [data, setData]     = useState<AppData>(DEFAULT_DATA)
   const [loaded, setLoaded] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // ── Carga inicial ──────────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem('habit-tracker-v2')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        setData(prev => ({
-          ...prev,
-          ...parsed,
-          // Si el guardado no tiene categorías, usar las por defecto
-          categories: parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES,
-          rewards: parsed.rewards?.length ? parsed.rewards : DEFAULT_REWARDS,
-        }))
-      } catch {}
+    const init = async () => {
+      // 1. Verificar sesión activa
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (session?.user) {
+        setUserId(session.user.id)
+        // 2. Cargar datos desde Supabase
+        const { data: row } = await supabase
+          .from('user_data')
+          .select('data')
+          .eq('user_id', session.user.id)
+          .single()
+
+        if (row?.data) {
+          const parsed = row.data
+          setData(prev => ({
+            ...prev, ...parsed,
+            categories: parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES,
+            rewards:    parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS,
+          }))
+        } else {
+          // Primera vez: guardar defaults en Supabase
+          await supabase.from('user_data').upsert({ user_id: session.user.id, data: DEFAULT_DATA })
+        }
+      } else {
+        // Sin sesión: usar localStorage
+        const saved = localStorage.getItem('habit-tracker-v2')
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved)
+            setData(prev => ({
+              ...prev, ...parsed,
+              categories: parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES,
+              rewards:    parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS,
+            }))
+          } catch {}
+        }
+        // Redirigir a login
+        if (typeof window !== 'undefined') window.location.href = '/auth'
+      }
+      setLoaded(true)
     }
-    setLoaded(true)
+    init()
+
+    // Escuchar cambios de auth (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        setUserId(session.user.id)
+        window.location.href = '/'
+      }
+      if (event === 'SIGNED_OUT') {
+        setUserId(null)
+        window.location.href = '/auth'
+      }
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
+  // ── Sync a Supabase con debounce ───────────────────────
   useEffect(() => {
-    if (loaded) localStorage.setItem('habit-tracker-v2', JSON.stringify(data))
-  }, [data, loaded])
+    if (!loaded) return
+    // Siempre guardar en localStorage
+    localStorage.setItem('habit-tracker-v2', JSON.stringify(data))
+    // Si hay usuario, sync a Supabase con debounce 1.5s
+    if (userId) {
+      if (syncTimer.current) clearTimeout(syncTimer.current)
+      syncTimer.current = setTimeout(async () => {
+        await supabase.from('user_data').upsert({ user_id: userId, data, updated_at: new Date().toISOString() })
+      }, 1500)
+    }
+  }, [data, loaded, userId])
 
   const toggleHabit = (habitId: string, dateKey: string) => {
     setData(prev => {
@@ -185,7 +241,9 @@ export function useAppData() {
   const updateCategory = (c: Category) => setData(prev => ({ ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x) }))
   const deleteCategory = (id: string) => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
 
-  return { data, loaded, toggleHabit, addWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
+  const logout = () => supabase.auth.signOut()
+
+  return { data, loaded, userId, logout, toggleHabit, addWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
 }
 
 export const getTodayKey  = () => new Date().toISOString().split('T')[0]
