@@ -155,7 +155,7 @@ export default function HabitsPage() {
       {/* ── Gráfico de línea mensual ── */}
       {(() => {
         const COL0 = 220, COL = 54
-        const W = COL0 + days.length * COL, H = 110, PAD = { top: 20, right: 0, bottom: 28, left: COL0 }
+        const W = COL0 + days.length * COL, H = 120, PAD = { top: 24, right: 0, bottom: 30, left: COL0 }
         const innerW = W - PAD.left - PAD.right
         const innerH = H - PAD.top - PAD.bottom
         const pts = dayScores.map((d, i) => ({
@@ -192,7 +192,7 @@ export default function HabitsPage() {
                 return (
                   <g key={v}>
                     <line x1={PAD.left} x2={W - PAD.right} y1={gy} y2={gy} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                    <text x={PAD.left - 4} y={gy + 4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.25)">{v}</text>
+                    <text x={PAD.left - 6} y={gy + 5} textAnchor="end" fontSize="13" fontWeight="700" fill="rgba(255,255,255,0.4)">{v}</text>
                   </g>
                 )
               })}
@@ -214,9 +214,9 @@ export default function HabitsPage() {
                       />
                     )}
                     {/* Número del día */}
-                    <text x={p.x} y={H - 4} textAnchor="middle" fontSize="8"
-                      fill={isToday ? 'var(--accent-purple)' : 'rgba(255,255,255,0.25)'}
-                      fontWeight={isToday ? '800' : '400'}
+                    <text x={p.x} y={H - 2} textAnchor="middle" fontSize="12"
+                      fill={isToday ? 'var(--accent-purple)' : 'rgba(255,255,255,0.4)'}
+                      fontWeight={isToday ? '800' : '600'}
                     >{p.n}</text>
                   </g>
                 )
