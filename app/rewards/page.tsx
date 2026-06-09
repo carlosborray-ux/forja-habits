@@ -5,7 +5,7 @@ import { useAppData, Reward } from '@/lib/store'
 const ICONS = ['📺', '🍕', '😴', '🛍️', '🎮', '🍫', '🏖️', '🎬', '🥂', '🍔', '💆', '🎯']
 
 export default function RewardsPage() {
-  const { data, redeemReward, setIdentity } = useAppData()
+  const { data, redeemReward, addReward, deleteReward, setIdentity } = useAppData()
   const [showAdd, setShowAdd] = useState(false)
   const [newReward, setNewReward] = useState({ title: '', cost: 50, icon: '🎁' })
   const [identityInput, setIdentityInput] = useState(data.identity)
@@ -77,10 +77,14 @@ export default function RewardsPage() {
                   width: '100%', padding: '8px', borderRadius: 8, border: 'none', cursor: canAfford ? 'pointer' : 'not-allowed',
                   background: canAfford ? 'linear-gradient(135deg, #FFD93D, #FF6B6B)' : 'rgba(255,255,255,0.05)',
                   color: canAfford ? 'white' : 'var(--text-muted)',
-                  fontWeight: 700, fontSize: 13,
-                  transition: 'all 0.2s',
+                  fontWeight: 700, fontSize: 13, transition: 'all 0.2s',
                 }}>{canAfford ? '🎁 Canjear' : 'Sin gold suficiente'}</button>
               )}
+              <button onClick={() => deleteReward(r.id)} style={{
+                width: '100%', marginTop: 6, padding: '5px', borderRadius: 7, border: 'none',
+                background: 'rgba(255,80,80,0.08)', color: 'rgba(255,80,80,0.6)',
+                cursor: 'pointer', fontSize: 11, fontWeight: 600,
+              }}>🗑 Eliminar</button>
             </div>
           )
         })}
@@ -105,8 +109,9 @@ export default function RewardsPage() {
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button className="btn-ghost" onClick={() => setShowAdd(false)} style={{ flex: 1 }}>Cancelar</button>
                 <button className="btn-primary" style={{ flex: 1 }} onClick={() => {
-                  if (!newReward.title) return
-                  // Add to rewards via store would need addReward — using local for now
+                  if (!newReward.title.trim()) return
+                  addReward({ id: Date.now().toString(), ...newReward, redeemed: false })
+                  setNewReward({ title: '', cost: 50, icon: '🎁' })
                   setShowAdd(false)
                 }}>Agregar</button>
               </div>

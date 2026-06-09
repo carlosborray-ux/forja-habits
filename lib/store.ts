@@ -171,6 +171,8 @@ export function useAppData() {
   const updateHabit    = (h: Habit) => setData(prev => ({ ...prev, habits: prev.habits.map(x => x.id === h.id ? h : x) }))
   const deleteHabit    = (id: string) => setData(prev => ({ ...prev, habits: prev.habits.filter(h => h.id !== id) }))
   const setIdentity    = (i: string) => setData(prev => ({ ...prev, identity: i }))
+  const addReward      = (r: Reward) => setData(prev => ({ ...prev, rewards: [...prev.rewards, r] }))
+  const deleteReward   = (id: string) => setData(prev => ({ ...prev, rewards: prev.rewards.filter(r => r.id !== id) }))
   const redeemReward   = (id: string) => setData(prev => {
     const r = prev.rewards.find(r => r.id === id)
     if (!r || prev.gold < r.cost) return prev
@@ -183,7 +185,7 @@ export function useAppData() {
   const updateCategory = (c: Category) => setData(prev => ({ ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x) }))
   const deleteCategory = (id: string) => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
 
-  return { data, loaded, toggleHabit, addWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
+  return { data, loaded, toggleHabit, addWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
 }
 
 export const getTodayKey  = () => new Date().toISOString().split('T')[0]

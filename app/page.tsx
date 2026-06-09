@@ -55,7 +55,7 @@ export default function WarRoom() {
         <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
           {dayName}
         </div>
-        <h1 className="gradient-text-purple" style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, margin: 0 }}>WAR ROOM</h1>
+        <h1 className="gradient-text-purple" style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, margin: 0 }}>FLOW ROOM</h1>
         <p style={{ fontSize: 17, color: 'var(--text-secondary)', marginTop: 8, fontStyle: 'italic' }}>
           {getMotivationalMessage(score)}
         </p>

@@ -286,7 +286,9 @@ export default function HabitsPage() {
                         </div>
                       </td>
 
-                      {days.map(d => {
+                      {(() => {
+                        const catColor = data.categories.find(c => c.name === h.category)?.color ?? h.color
+                        return days.map(d => {
                         const checked = !!h.completedDays[d.key]
                         const isToday = d.key === today
                         return (
@@ -296,16 +298,16 @@ export default function HabitsPage() {
                               border: checked
                                 ? 'none'
                                 : isToday
-                                  ? `2px solid ${h.color}`
+                                  ? `2px solid ${catColor}`
                                   : '2px solid rgba(255,255,255,0.12)',
                               cursor: 'pointer',
                               background: checked
-                                ? h.color
+                                ? catColor
                                 : isToday
-                                  ? `${h.color}15`
+                                  ? `${catColor}15`
                                   : 'rgba(255,255,255,0.04)',
                               boxShadow: checked
-                                ? `0 0 16px ${h.color}88`
+                                ? `0 0 16px ${catColor}88`
                                 : 'none',
                               transition: 'all 0.15s ease',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -320,6 +322,8 @@ export default function HabitsPage() {
                           </td>
                         )
                       })}
+                        )
+                      })()}
 
                       <td style={{ textAlign: 'center' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{done}/{h.goal}</span>
