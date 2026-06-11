@@ -44,6 +44,9 @@ export default function Sidebar() {
         <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, letterSpacing: 2 }}>
           HÁBITOS & RUTINAS ✦ 2026
         </div>
+        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 6, letterSpacing: 1.5, opacity: 0.7 }}>
+          by CABA
+        </div>
       </div>
 
       {/* Level strip */}
