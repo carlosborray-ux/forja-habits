@@ -161,7 +161,7 @@ export default function AgendaPage() {
                 {format(d, 'd')}
               </div>
               {dayBlocks.length > 0 && (
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
                   {done}/{dayBlocks.length}
                 </div>
               )}
@@ -213,7 +213,7 @@ export default function AgendaPage() {
               {/* Load defaults button if empty today */}
               {dayBlocks.length === 0 && isToday && (
                 <div style={{ position: 'absolute', top: 16, left: 4, right: 4, zIndex: 5, pointerEvents: 'none' }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textAlign: 'center' }}>clic para agregar</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>clic para agregar</div>
                 </div>
               )}
 

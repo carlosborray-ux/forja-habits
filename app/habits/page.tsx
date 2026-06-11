@@ -173,7 +173,7 @@ export default function HabitsPage() {
           ` L${pts[pts.length - 1].x},${PAD.top + innerH} Z`
         return (
           <div className="card" style={{ marginBottom: 6, padding: '14px 0 8px', overflow: 'hidden', width: 220 + days.length * 54 + 266 }}>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6, padding: '0 16px' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6, padding: '0 16px' }}>
               PROGRESO DEL MES — {format(viewMonth, 'MMMM yyyy', { locale: es }).toUpperCase()}
               <span style={{ marginLeft: 12, color: 'var(--accent-teal)', fontWeight: 700 }}>
                 {Math.round(dayScores.filter(d => d.score > 0).reduce((a, d) => a + d.score, 0) / (dayScores.filter(d => d.score > 0).length || 1))}% promedio
@@ -248,7 +248,7 @@ export default function HabitsPage() {
           <thead>
             {/* ── Fila barras de cumplimiento diario ── */}
             <tr>
-              <th style={{ textAlign: 'left', padding: '0 12px 6px', fontSize: 9, color: 'var(--text-muted)', fontWeight: 500 }}>
+              <th style={{ textAlign: 'left', padding: '0 12px 6px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
                 % DIARIO
               </th>
               {dayScores.map(d => {
@@ -297,7 +297,7 @@ export default function HabitsPage() {
 
             {/* ── Fila días (letra + número) ── */}
             <tr>
-              <th style={{ textAlign: 'left', padding: '4px 12px', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1 }}>HÁBITO</th>
+              <th style={{ textAlign: 'left', padding: '4px 12px', fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1 }}>HÁBITO</th>
               {days.map(d => (
                 <th key={d.key} style={{
                   textAlign: 'center', padding: '4px 0', fontSize: 11,
@@ -308,9 +308,9 @@ export default function HabitsPage() {
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{d.n}</div>
                 </th>
               ))}
-              <th style={{ textAlign: 'center', fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>META</th>
-              <th style={{ textAlign: 'center', fontSize: 10, color: 'var(--text-muted)' }}>CUMPL.</th>
-              <th style={{ textAlign: 'center', fontSize: 10, color: 'var(--text-muted)' }}>RACHA</th>
+              <th style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>META</th>
+              <th style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>CUMPL.</th>
+              <th style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>RACHA</th>
               <th />
             </tr>
           </thead>
@@ -362,7 +362,7 @@ export default function HabitsPage() {
                           <span style={{ fontSize: 18, flexShrink: 0 }}>{h.icon}</span>
                           <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
-                            {h.stack && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 99, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.stack}</span>}
+                            {h.stack && <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 99, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.stack}</span>}
                           </div>
                         </div>
                       </td>
@@ -415,8 +415,8 @@ export default function HabitsPage() {
 
                       <td style={{ textAlign: 'center', borderRadius: '0 8px 8px 0', paddingRight: 4 }}>
                         <div style={{ display: 'flex', gap: 0, justifyContent: 'center' }}>
-                          <button onClick={() => openEdit(h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '2px 3px' }}>✏️</button>
-                          <button onClick={() => deleteHabit(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, padding: '2px 3px', opacity: 0.4 }}>✕</button>
+                          <button onClick={() => openEdit(h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '2px 3px' }}>✏️</button>
+                          <button onClick={() => deleteHabit(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-coral)', fontSize: 16, padding: '2px 3px', opacity: 0.7 }}>✕</button>
                         </div>
                       </td>
                     </tr>
@@ -535,8 +535,8 @@ export default function HabitsPage() {
                   <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{c.name}</span>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{data.habits.filter(h => h.category === c.name).length} hábitos</span>
-                  <button onClick={() => openEditCat(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text-muted)', padding: '2px 4px' }}>✏️</button>
-                  <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text-muted)', padding: '2px 4px', opacity: 0.5 }}>✕</button>
+                  <button onClick={() => openEditCat(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text-secondary)', padding: '2px 4px' }}>✏️</button>
+                  <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--accent-coral)', padding: '2px 4px', opacity: 0.7 }}>✕</button>
                 </div>
               ))}
             </div>

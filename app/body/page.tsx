@@ -110,7 +110,7 @@ export default function BodyPage() {
           ) : (
             <>
               <div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: 1 }}>META</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 1 }}>META</div>
                 <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--accent-teal)' }}>{goal ? `${goal} kg` : '—'}</div>
               </div>
               <button onClick={() => { setGoalInput(goalWeight); setEditingGoal(true) }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 7, padding: '6px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
@@ -131,7 +131,7 @@ export default function BodyPage() {
           { label: 'PROMEDIO',   value: stats ? `${stats.avg} kg` : '—',                    color: 'var(--text-secondary)'},
         ].map(s => (
           <div key={s.label} className="card" style={{ textAlign: 'center', padding: '16px 8px' }}>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: 1 }}>{s.label}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: 1 }}>{s.label}</div>
             <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
           </div>
         ))}
