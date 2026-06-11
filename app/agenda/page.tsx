@@ -75,7 +75,7 @@ export default function AgendaPage() {
   // Modal state
   const [modal, setModal] = useState<{ date: string; time: string } | null>(null)
   const [editId, setEditId]   = useState<string | null>(null)
-  const [form, setForm] = useState({ title: '', time: '09:00', endTime: '10:00', category: 'work' as AgendaBlock['category'] })
+  const [form, setForm] = useState({ title: '', time: '09:00', endTime: '10:00', category: 'work' as AgendaBlock['category'], date: '' })
 
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -93,22 +93,23 @@ export default function AgendaPage() {
     const t = fromMin(Math.min(snappedMin, (END_H - 1) * 60))
     const e = fromMin(Math.min(snappedMin + 60, END_H * 60))
     setEditId(null)
-    setForm({ title: '', time: t, endTime: e, category: 'work' })
+    setForm({ title: '', time: t, endTime: e, category: 'work', date })
     setModal({ date, time: t })
   }
 
   const openEdit = (b: AgendaBlock) => {
     setEditId(b.id)
-    setForm({ title: b.title, time: b.time, endTime: b.endTime ?? fromMin(toMin(b.time) + 60), category: b.category })
+    setForm({ title: b.title, time: b.time, endTime: b.endTime ?? fromMin(toMin(b.time) + 60), category: b.category, date: b.date })
     setModal({ date: b.date, time: b.time })
   }
 
   const saveModal = () => {
     if (!form.title.trim() || !modal) return
+    const { date, ...rest } = form
     if (editId) {
-      updateAgendaBlock({ id: editId, ...form, done: false, date: modal.date })
+      updateAgendaBlock({ id: editId, ...rest, done: false, date })
     } else {
-      addAgendaBlock({ id: `${modal.date}-${Date.now()}`, ...form, done: false, date: modal.date })
+      addAgendaBlock({ id: `${date}-${Date.now()}`, ...rest, done: false, date })
     }
     setModal(null)
   }
@@ -295,6 +296,14 @@ export default function AgendaPage() {
                   placeholder="¿Qué vas a hacer?"
                   style={{ width: '100%', padding: '11px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text-primary)', fontSize: 16, outline: 'none', boxSizing: 'border-box' }} />
               </div>
+
+              {editId && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>DÍA</div>
+                  <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text-primary)', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>

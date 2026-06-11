@@ -204,7 +204,7 @@ function useAppDataInternal() {
     init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) window.location.href = '/'
+      if (event === 'SIGNED_IN' && session && window.location.pathname.startsWith('/auth')) window.location.href = '/'
       if (event === 'SIGNED_OUT') window.location.href = '/auth'
     })
     return () => subscription.unsubscribe()
