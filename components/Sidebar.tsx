@@ -8,6 +8,7 @@ const NAV = [
   { path: '/habits',       icon: '✅',  label: 'Hábitos'   },
   { path: '/agenda',       icon: '📅',  label: 'Agenda'    },
   { path: '/body',         icon: '⚖️',  label: 'Body'      },
+  { path: '/finanzas',     icon: '💰',  label: 'Finanzas'  },
   { path: '/journal',      icon: '🧠',  label: 'Journal'   },
   { path: '/analytics',    icon: '📊',  label: 'Analytics' },
   { path: '/achievements', icon: '🏆',  label: 'Logros'    },

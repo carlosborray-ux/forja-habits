@@ -59,6 +59,23 @@ export interface Category {
   color: string
 }
 
+export interface FinanceCategory {
+  id: string
+  name: string
+  color: string
+  icon: string
+  budget: number // presupuesto mensual (0 = sin límite)
+}
+
+export interface Transaction {
+  id: string
+  date: string // YYYY-MM-DD
+  amount: number
+  type: 'expense' | 'income'
+  category: string // FinanceCategory id
+  note?: string
+}
+
 export interface AppData {
   habits: Habit[]
   categories: Category[]
@@ -67,6 +84,8 @@ export interface AppData {
   agenda: AgendaBlock[]
   water: Record<string, WaterLog>
   rewards: Reward[]
+  financeCategories: FinanceCategory[]
+  transactions: Transaction[]
   xp: number
   level: number
   gold: number
@@ -107,6 +126,17 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: 'c5', name: 'Crecimiento', color: '#4FC3F7' },
 ]
 
+const DEFAULT_FINANCE_CATEGORIES: FinanceCategory[] = [
+  { id: 'f1', name: 'Comida',          color: '#FF6B6B', icon: '🍔', budget: 400 },
+  { id: 'f2', name: 'Transporte',      color: '#4FC3F7', icon: '🚗', budget: 100 },
+  { id: 'f3', name: 'Vivienda',        color: '#7C6FFF', icon: '🏠', budget: 600 },
+  { id: 'f4', name: 'Entretenimiento', color: '#FF4FA3', icon: '🎮', budget: 80  },
+  { id: 'f5', name: 'Salud',           color: '#00E5B8', icon: '🏥', budget: 60  },
+  { id: 'f6', name: 'Ahorro/Inversión',color: '#FFD93D', icon: '💰', budget: 200 },
+  { id: 'f7', name: 'Otros',           color: '#9B59B6', icon: '📦', budget: 100 },
+  { id: 'f8', name: 'Ingreso',         color: '#2ECC71', icon: '💵', budget: 0   },
+]
+
 const DEFAULT_DATA: AppData = {
   habits: DEFAULT_HABITS,
   categories: DEFAULT_CATEGORIES,
@@ -115,6 +145,8 @@ const DEFAULT_DATA: AppData = {
   agenda: [],
   water: {},
   rewards: DEFAULT_REWARDS,
+  financeCategories: DEFAULT_FINANCE_CATEGORIES,
+  transactions: [],
   xp: 0,
   level: 1,
   gold: 0,
@@ -134,7 +166,9 @@ function normalizeAppData(parsed: Partial<AppData>): Partial<AppData> {
   const categories = parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES
   const rewards    = parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS
   const habits     = parsed.habits ? migrateHabitCategories(parsed.habits, categories) : parsed.habits
-  return { ...parsed, categories, rewards, ...(habits ? { habits } : {}) }
+  const financeCategories = parsed.financeCategories?.length ? parsed.financeCategories : DEFAULT_FINANCE_CATEGORIES
+  const transactions      = parsed.transactions ?? []
+  return { ...parsed, categories, rewards, financeCategories, transactions, ...(habits ? { habits } : {}) }
 }
 
 // ── Tipos del contexto ──────────────────────────────────
@@ -266,7 +300,15 @@ function useAppDataInternal() {
   const deleteCategory    = (id: string)    => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
   const logout            = ()              => supabase.auth.signOut()
 
-  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
+  // ── Finanzas ──
+  const addTransaction    = (t: Transaction) => setData(prev => ({ ...prev, transactions: [...prev.transactions, t] }))
+  const updateTransaction = (t: Transaction) => setData(prev => ({ ...prev, transactions: prev.transactions.map(x => x.id === t.id ? t : x) }))
+  const deleteTransaction = (id: string)     => setData(prev => ({ ...prev, transactions: prev.transactions.filter(t => t.id !== id) }))
+  const addFinanceCategory    = (c: FinanceCategory) => setData(prev => ({ ...prev, financeCategories: [...prev.financeCategories, c] }))
+  const updateFinanceCategory = (c: FinanceCategory) => setData(prev => ({ ...prev, financeCategories: prev.financeCategories.map(x => x.id === c.id ? c : x) }))
+  const deleteFinanceCategory = (id: string)         => setData(prev => ({ ...prev, financeCategories: prev.financeCategories.filter(c => c.id !== id) }))
+
+  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory }
 }
 
 export const getTodayKey  = () => new Date().toISOString().split('T')[0]
