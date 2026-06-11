@@ -74,22 +74,22 @@ export interface AppData {
 }
 
 const DEFAULT_HABITS: Habit[] = [
-  { id: '1',  name: 'Cero Azúcar',       color: '#FF6B6B', icon: '🚫', category: 'Salud',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '2',  name: 'Cero Carb',          color: '#FF6B6B', icon: '🥩', category: 'Salud',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '3',  name: '3 Termos de Agua',   color: '#4FC3F7', icon: '💧', category: 'Salud',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Día' },
-  { id: '4',  name: '1h Ejercicio',       color: '#00E5B8', icon: '🏋️', category: 'Fitness',    goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '5',  name: 'Estirar',            color: '#00E5B8', icon: '🧘', category: 'Fitness',    goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '6',  name: 'Meditar',            color: '#7C6FFF', icon: '🧠', category: 'Mente',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '7',  name: 'Visualizar',         color: '#7C6FFF', icon: '👁️', category: 'Mente',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '8',  name: 'Agradecer',          color: '#FFD93D', icon: '🙏', category: 'Mente',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '9',  name: 'Lectura/Audio',      color: '#FFD93D', icon: '📚', category: 'Crecimiento',goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
-  { id: '10', name: 'Dormir 7h+',         color: '#9B59B6', icon: '😴', category: 'Salud',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
-  { id: '11', name: 'BIT',                color: '#FF6B6B', icon: '📈', category: 'Trading',    goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Trabajo' },
-  { id: '12', name: 'EOD Review',         color: '#FF6B6B', icon: '📊', category: 'Trading',    goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
-  { id: '13', name: 'Cuadro LQ',          color: '#7C6FFF', icon: '✍️', category: 'Trading',    goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
-  { id: '14', name: '2 Comidas / Horario',color: '#00E5B8', icon: '🍽️', category: 'Salud',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Día' },
-  { id: '15', name: 'Ducha Fría',         color: '#4FC3F7', icon: '🚿', category: 'Fitness',    goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
-  { id: '16', name: 'Sin Redes 2h+',      color: '#FF4FA3', icon: '📵', category: 'Mente',      goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Día' },
+  { id: '1',  name: 'Cero Azúcar',       color: '#FF6B6B', icon: '🚫', category: 'c1', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '2',  name: 'Cero Carb',          color: '#FF6B6B', icon: '🥩', category: 'c1', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '3',  name: '3 Termos de Agua',   color: '#4FC3F7', icon: '💧', category: 'c1', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Día' },
+  { id: '4',  name: '1h Ejercicio',       color: '#00E5B8', icon: '🏋️', category: 'c2', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '5',  name: 'Estirar',            color: '#00E5B8', icon: '🧘', category: 'c2', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '6',  name: 'Meditar',            color: '#7C6FFF', icon: '🧠', category: 'c3', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '7',  name: 'Visualizar',         color: '#7C6FFF', icon: '👁️', category: 'c3', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '8',  name: 'Agradecer',          color: '#FFD93D', icon: '🙏', category: 'c3', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '9',  name: 'Lectura/Audio',      color: '#FFD93D', icon: '📚', category: 'c5', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
+  { id: '10', name: 'Dormir 7h+',         color: '#9B59B6', icon: '😴', category: 'c1', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
+  { id: '11', name: 'BIT',                color: '#FF6B6B', icon: '📈', category: 'c4', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Trabajo' },
+  { id: '12', name: 'EOD Review',         color: '#FF6B6B', icon: '📊', category: 'c4', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
+  { id: '13', name: 'Cuadro LQ',          color: '#7C6FFF', icon: '✍️', category: 'c4', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Noche' },
+  { id: '14', name: '2 Comidas / Horario',color: '#00E5B8', icon: '🍽️', category: 'c1', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Día' },
+  { id: '15', name: 'Ducha Fría',         color: '#4FC3F7', icon: '🚿', category: 'c2', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Mañana' },
+  { id: '16', name: 'Sin Redes 2h+',      color: '#FF4FA3', icon: '📵', category: 'c3', goal: 31, completedDays: {}, createdAt: new Date().toISOString(), stack: 'Día' },
 ]
 
 const DEFAULT_REWARDS: Reward[] = [
@@ -119,6 +119,22 @@ const DEFAULT_DATA: AppData = {
   level: 1,
   gold: 0,
   identity: 'Élite',
+}
+
+// Migra hábitos cuyo `category` quedó guardado como nombre (legado) a su id estable
+function migrateHabitCategories(habits: Habit[], categories: Category[]): Habit[] {
+  return habits.map(h => {
+    if (categories.some(c => c.id === h.category)) return h
+    const byName = categories.find(c => c.name === h.category)
+    return byName ? { ...h, category: byName.id } : h
+  })
+}
+
+function normalizeAppData(parsed: Partial<AppData>): Partial<AppData> {
+  const categories = parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES
+  const rewards    = parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS
+  const habits     = parsed.habits ? migrateHabitCategories(parsed.habits, categories) : parsed.habits
+  return { ...parsed, categories, rewards, ...(habits ? { habits } : {}) }
 }
 
 // ── Tipos del contexto ──────────────────────────────────
@@ -155,11 +171,7 @@ function useAppDataInternal() {
         if (cached) {
           try {
             const parsed = JSON.parse(cached)
-            setData(prev => ({
-              ...prev, ...parsed,
-              categories: parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES,
-              rewards:    parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS,
-            }))
+            setData(prev => ({ ...prev, ...normalizeAppData(parsed) }))
           } catch {}
         }
 
@@ -172,11 +184,7 @@ function useAppDataInternal() {
 
         if (row?.data) {
           const parsed = row.data
-          setData(prev => ({
-            ...prev, ...parsed,
-            categories: parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES,
-            rewards:    parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS,
-          }))
+          setData(prev => ({ ...prev, ...normalizeAppData(parsed) }))
         } else {
           await supabase.from('user_data').upsert({ user_id: session.user.id, data: DEFAULT_DATA })
         }
@@ -185,11 +193,7 @@ function useAppDataInternal() {
         if (saved) {
           try {
             const parsed = JSON.parse(saved)
-            setData(prev => ({
-              ...prev, ...parsed,
-              categories: parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES,
-              rewards:    parsed.rewards?.length    ? parsed.rewards    : DEFAULT_REWARDS,
-            }))
+            setData(prev => ({ ...prev, ...normalizeAppData(parsed) }))
           } catch {}
         }
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
@@ -258,13 +262,7 @@ function useAppDataInternal() {
   })
   const setWater          = (date: string, glasses: number) => setData(prev => ({ ...prev, water: { ...prev.water, [date]: { date, glasses, goal: 8 } } }))
   const addCategory       = (c: Category)   => setData(prev => ({ ...prev, categories: [...prev.categories, c] }))
-  const updateCategory    = (c: Category)   => setData(prev => {
-    const old = prev.categories.find(x => x.id === c.id)
-    const habits = old && old.name !== c.name
-      ? prev.habits.map(h => h.category === old.name ? { ...h, category: c.name } : h)
-      : prev.habits
-    return { ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x), habits }
-  })
+  const updateCategory    = (c: Category)   => setData(prev => ({ ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x) }))
   const deleteCategory    = (id: string)    => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
   const logout            = ()              => supabase.auth.signOut()
 

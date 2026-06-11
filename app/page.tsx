@@ -19,12 +19,11 @@ export default function WarRoom() {
   const xpPercent  = ((data.xp % 500) / 500) * 100
   const xpToNext   = 500 - (data.xp % 500)
 
-  const categories = [...new Set(data.habits.map(h => h.category))]
-  const catStats   = categories.map(cat => {
-    const hs = data.habits.filter(h => h.category === cat)
+  const catStats = data.categories.map(cat => {
+    const hs = data.habits.filter(h => h.category === cat.id)
     const done = hs.filter(h => h.completedDays[today]).length
-    return { cat, done, total: hs.length, pct: Math.round(done / hs.length * 100) }
-  }).sort((a, b) => b.pct - a.pct)
+    return { cat: cat.name, done, total: hs.length, pct: hs.length > 0 ? Math.round(done / hs.length * 100) : 0 }
+  }).filter(s => s.total > 0).sort((a, b) => b.pct - a.pct)
 
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = subDays(new Date(), 6 - i)
@@ -127,7 +126,7 @@ export default function WarRoom() {
                     <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, borderLeft: `3px solid ${h.color}` }}>
                       <span style={{ fontSize: 14 }}>{h.icon}</span>
                       <span style={{ fontSize: 12, color: 'var(--text-secondary)', flex: 1 }}>{h.name}</span>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{h.category}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{data.categories.find(c => c.id === h.category)?.name ?? h.category}</span>
                     </div>
                   ))}
                 </div>

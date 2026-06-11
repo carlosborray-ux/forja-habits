@@ -62,23 +62,23 @@ export default function HabitsPage() {
 
   // Primero las categorías definidas (en orden)
   categories.forEach(cat => {
-    const hs = data.habits.filter(h => h.category === cat.name)
+    const hs = data.habits.filter(h => h.category === cat.id)
     if (hs.length > 0) habitsByCat.push({ cat, habits: hs })
   })
 
   // Hábitos sin categoría reconocida (o sin categoría)
-  const knownCatNames = categories.map(c => c.name)
-  const uncategorized = data.habits.filter(h => !knownCatNames.includes(h.category))
+  const knownCatIds = categories.map(c => c.id)
+  const uncategorized = data.habits.filter(h => !knownCatIds.includes(h.category))
   if (uncategorized.length > 0) habitsByCat.push({ cat: null, habits: uncategorized })
 
   // Si hay filtro activo, mostrar solo esa categoría
   const groupsToShow = filterCat === 'all'
     ? habitsByCat
-    : habitsByCat.filter(g => g.cat?.name === filterCat || (filterCat === '__sin__' && g.cat === null))
+    : habitsByCat.filter(g => g.cat?.id === filterCat || (filterCat === '__sin__' && g.cat === null))
 
   // ── Habit modal helpers ──
   const openAdd = () => {
-    setForm({ ...emptyHabit(), category: categories[0]?.name ?? '' })
+    setForm({ ...emptyHabit(), category: categories[0]?.id ?? '' })
     setEditingHabit(null)
     setHabitModal('add')
   }
@@ -137,13 +137,13 @@ export default function HabitsPage() {
           color: filterCat === 'all' ? 'white' : 'var(--text-secondary)',
         }}>Todos ({data.habits.length})</button>
         {categories.map(c => {
-          const count = data.habits.filter(h => h.category === c.name).length
+          const count = data.habits.filter(h => h.category === c.id).length
           return (
-            <button key={c.id} onClick={() => setFilterCat(c.name)} style={{
+            <button key={c.id} onClick={() => setFilterCat(c.id)} style={{
               padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              background: filterCat === c.name ? c.color : 'rgba(255,255,255,0.06)',
-              color: filterCat === c.name ? 'white' : 'var(--text-secondary)',
-              boxShadow: filterCat === c.name ? `0 0 14px ${c.color}55` : 'none',
+              background: filterCat === c.id ? c.color : 'rgba(255,255,255,0.06)',
+              color: filterCat === c.id ? 'white' : 'var(--text-secondary)',
+              boxShadow: filterCat === c.id ? `0 0 14px ${c.color}55` : 'none',
               transition: 'all 0.15s',
             }}>{c.name} ({count})</button>
           )
@@ -368,7 +368,7 @@ export default function HabitsPage() {
                       </td>
 
                       {(() => {
-                        const catColor = data.categories.find(c => c.name === h.category)?.color ?? h.color
+                        const catColor = data.categories.find(c => c.id === h.category)?.color ?? h.color
                         return days.map(d => {
                           const checked = !!h.completedDays[d.key]
                           const isToday = d.key === today
@@ -448,10 +448,10 @@ export default function HabitsPage() {
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>CATEGORÍA</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {categories.map(c => (
-                    <button key={c.id} onClick={() => setForm(p => ({ ...p, category: c.name }))} style={{
+                    <button key={c.id} onClick={() => setForm(p => ({ ...p, category: c.id }))} style={{
                       padding: '6px 12px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                      background: form.category === c.name ? c.color : 'rgba(255,255,255,0.06)',
-                      color: form.category === c.name ? 'white' : 'var(--text-secondary)',
+                      background: form.category === c.id ? c.color : 'rgba(255,255,255,0.06)',
+                      color: form.category === c.id ? 'white' : 'var(--text-secondary)',
                       transition: 'all 0.1s',
                     }}>{c.name}</button>
                   ))}
@@ -534,7 +534,7 @@ export default function HabitsPage() {
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, borderLeft: `3px solid ${c.color}` }}>
                   <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{c.name}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{data.habits.filter(h => h.category === c.name).length} hábitos</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{data.habits.filter(h => h.category === c.id).length} hábitos</span>
                   <button onClick={() => openEditCat(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text-secondary)', padding: '2px 4px' }}>✏️</button>
                   <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--accent-coral)', padding: '2px 4px', opacity: 0.7 }}>✕</button>
                 </div>

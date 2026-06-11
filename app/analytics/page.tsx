@@ -26,12 +26,11 @@ export default function AnalyticsPage() {
   const streak7Days = last30.slice(-7).every(d => d.score > 0) ? '7 días activo' : null
 
   // Radar
-  const categories = [...new Set(data.habits.map(h => h.category))]
-  const radarData = categories.map(cat => {
-    const hs = data.habits.filter(h => h.category === cat)
+  const radarData = data.categories.filter(cat => data.habits.some(h => h.category === cat.id)).map(cat => {
+    const hs = data.habits.filter(h => h.category === cat.id)
     let done = 0
     last30.forEach(d => hs.forEach(h => { if (h.completedDays[d.key]) done++ }))
-    return { cat, value: hs.length > 0 ? Math.round((done / (hs.length * 30)) * 100) : 0 }
+    return { cat: cat.name, value: Math.round((done / (hs.length * 30)) * 100) }
   })
 
   // Habit consistency
