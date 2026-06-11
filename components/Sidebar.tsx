@@ -38,20 +38,20 @@ export default function Sidebar() {
     }}>
       {/* Logo */}
       <div style={{ padding: '0 20px 28px' }}>
-        <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }} className="gradient-text-purple">
+        <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, lineHeight: 1 }} className="gradient-text-purple">
           FORJA
         </div>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, letterSpacing: 2 }}>
-          HÁBITOS & RUTINAS ✦ 2026
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, letterSpacing: 2 }}>
+          HÁBITOS & RUTINAS ✦
         </div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 6, letterSpacing: 1.5, opacity: 0.7 }}>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, letterSpacing: 1.5, opacity: 0.7 }}>
           by CABA
         </div>
       </div>
 
       {/* Level strip */}
       <div style={{ margin: '0 12px 20px', padding: '10px 12px', background: 'rgba(124,111,255,0.08)', borderRadius: 12, border: '1px solid rgba(124,111,255,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
           <span style={{ color: 'var(--text-muted)' }}>NIVEL <strong style={{ color: 'var(--accent-gold)' }}>{data.level}</strong></span>
           <span style={{ color: 'var(--accent-gold)' }}>⚡ {data.xp} XP</span>
         </div>
@@ -62,9 +62,9 @@ export default function Sidebar() {
 
       {/* Gold */}
       <div style={{ margin: '-8px 12px 16px', padding: '7px 12px', background: 'rgba(255,217,61,0.07)', borderRadius: 10, border: '1px solid rgba(255,217,61,0.2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 14 }}>🪙</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-gold)' }}>{data.gold}</span>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>gold</span>
+        <span style={{ fontSize: 16 }}>🪙</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent-gold)' }}>{data.gold}</span>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>gold</span>
       </div>
 
       {/* Nav */}
@@ -79,7 +79,7 @@ export default function Sidebar() {
               marginBottom: 2,
               background: active ? 'rgba(124,111,255,0.15)' : 'transparent',
               color: active ? 'var(--accent-purple)' : 'var(--text-secondary)',
-              fontWeight: active ? 700 : 400, fontSize: 13.5,
+              fontWeight: active ? 700 : 400, fontSize: 15,
               textAlign: 'left',
               transition: 'all 0.15s ease',
               boxShadow: active ? 'inset 3px 0 0 var(--accent-purple)' : 'none',
@@ -93,13 +93,13 @@ export default function Sidebar() {
 
       {/* Identity badge + logout */}
       <div style={{ padding: '12px 20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>IDENTIDAD</div>
-        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }} className="gradient-text-pink">
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>IDENTIDAD</div>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }} className="gradient-text-pink">
           🔥 {data.identity}
         </div>
         <button onClick={() => supabase.auth.signOut()} style={{
-          width: '100%', padding: '7px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12,
+          width: '100%', padding: '8px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13,
         }}>
           Cerrar sesión
         </button>
