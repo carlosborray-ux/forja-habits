@@ -9,7 +9,7 @@ const NAV = [
   { path: '/agenda',       icon: '📅',  label: 'Agenda'    },
   { path: '/body',         icon: '⚖️',  label: 'Body'      },
   { path: '/finanzas',     icon: '💰',  label: 'Finanzas'  },
-  { path: '/tareas',       icon: '📝',  label: 'Tareas'    },
+  { path: '/tareas',       icon: '📝',  label: 'To Do'     },
   { path: '/journal',      icon: '🧠',  label: 'Journal'   },
   { path: '/analytics',    icon: '📊',  label: 'Analytics' },
   { path: '/achievements', icon: '🏆',  label: 'Logros'    },
@@ -22,6 +22,9 @@ export default function Sidebar() {
   const { data } = useAppData()
 
   const xpPercent = ((data.xp % 500) / 500) * 100
+
+  const todayStr = new Date().toISOString().split('T')[0]
+  const pendingToday = data.tasks.filter(t => !t.completed && t.dueDate && t.dueDate <= todayStr).length
 
   return (
     <aside style={{
@@ -87,7 +90,13 @@ export default function Sidebar() {
               boxShadow: active ? 'inset 3px 0 0 var(--accent-purple)' : 'none',
             }}>
               <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{item.icon}</span>
-              {item.label}
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.path === '/tareas' && pendingToday > 0 && (
+                <span style={{
+                  background: 'var(--accent-coral)', color: 'white', fontSize: 11, fontWeight: 700,
+                  borderRadius: 99, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
+                }}>{pendingToday}</span>
+              )}
             </button>
           )
         })}
