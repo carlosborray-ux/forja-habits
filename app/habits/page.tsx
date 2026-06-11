@@ -349,7 +349,7 @@ export default function HabitsPage() {
                         {catPct === 100 ? '✅ 100%' : `${catPct}%`}
                       </span>
                       <button
-                        onClick={() => { setForm({ ...emptyHabit(), category: cat?.name ?? '' }); setEditingHabit(null); setHabitModal('add') }}
+                        onClick={() => { setForm({ ...emptyHabit(), category: cat?.id ?? categories[0]?.id ?? '' }); setEditingHabit(null); setHabitModal('add') }}
                         style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${catColor}55`, borderRadius: 6, cursor: 'pointer', color: catColor, fontSize: 11, fontWeight: 700, padding: '3px 8px' }}
                       >+ hábito</button>
                     </div>
