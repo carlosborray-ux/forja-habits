@@ -15,7 +15,7 @@ const emptyHabit = (): Omit<Habit, 'id' | 'completedDays' | 'createdAt'> => ({
 })
 
 export default function HabitsPage() {
-  const { data, toggleHabit, addHabit, updateHabit, deleteHabit, addCategory, updateCategory, deleteCategory } = useAppData()
+  const { data, loaded, toggleHabit, addHabit, updateHabit, deleteHabit, addCategory, updateCategory, deleteCategory } = useAppData()
   const today = getTodayKey()
   const now = new Date()
 
@@ -106,6 +106,12 @@ export default function HabitsPage() {
     else addCategory({ id: Date.now().toString(), ...catForm })
     setCatModal(false)
   }
+
+  if (!loaded) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+      <div className="gradient-text-purple" style={{ fontSize: 26, fontWeight: 900, letterSpacing: 2 }}>CARGANDO...</div>
+    </div>
+  )
 
   return (
     <div className="page-content" style={{ padding: '32px 40px' }}>

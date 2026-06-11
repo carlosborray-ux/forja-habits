@@ -166,16 +166,7 @@ function useAppDataInternal() {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
-        // Primero cargamos localStorage para mostrar datos al instante
-        const cached = localStorage.getItem('habit-tracker-v2')
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached)
-            setData(prev => ({ ...prev, ...normalizeAppData(parsed) }))
-          } catch {}
-        }
-
-        // Luego sincronizamos con Supabase (source of truth)
+        // Esperamos a Supabase (source of truth) antes de mostrar nada, para evitar el flash de datos viejos
         const { data: row } = await supabase
           .from('user_data')
           .select('data')
@@ -186,6 +177,14 @@ function useAppDataInternal() {
           const parsed = row.data
           setData(prev => ({ ...prev, ...normalizeAppData(parsed) }))
         } else {
+          // Sin datos en la nube aún: usamos la caché local si existe, si no los valores por defecto
+          const cached = localStorage.getItem('habit-tracker-v2')
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached)
+              setData(prev => ({ ...prev, ...normalizeAppData(parsed) }))
+            } catch {}
+          }
           await supabase.from('user_data').upsert({ user_id: session.user.id, data: DEFAULT_DATA })
         }
       } else {
