@@ -76,6 +76,33 @@ export interface Transaction {
   note?: string
 }
 
+export interface SubTask {
+  id: string
+  title: string
+  done: boolean
+}
+
+export interface Task {
+  id: string
+  title: string
+  notes?: string
+  listId: string // TaskList id
+  dueDate?: string // YYYY-MM-DD
+  priority: 0 | 1 | 2 | 3 // 0=ninguna, 1=baja, 2=media, 3=alta
+  completed: boolean
+  completedAt?: string
+  createdAt: string
+  subtasks: SubTask[]
+  recurring?: 'none' | 'daily' | 'weekly' | 'monthly'
+}
+
+export interface TaskList {
+  id: string
+  name: string
+  color: string
+  icon: string
+}
+
 export interface AppData {
   habits: Habit[]
   categories: Category[]
@@ -86,6 +113,8 @@ export interface AppData {
   rewards: Reward[]
   financeCategories: FinanceCategory[]
   transactions: Transaction[]
+  taskLists: TaskList[]
+  tasks: Task[]
   xp: number
   level: number
   gold: number
@@ -137,6 +166,13 @@ const DEFAULT_FINANCE_CATEGORIES: FinanceCategory[] = [
   { id: 'f8', name: 'Ingreso',         color: '#2ECC71', icon: '💵', budget: 0   },
 ]
 
+const DEFAULT_TASK_LISTS: TaskList[] = [
+  { id: 't1', name: 'Inbox',    color: '#7C6FFF', icon: '📥' },
+  { id: 't2', name: 'Trabajo',  color: '#FFD93D', icon: '💼' },
+  { id: 't3', name: 'Personal', color: '#00E5B8', icon: '🏠' },
+  { id: 't4', name: 'Compras',  color: '#FF4FA3', icon: '🛒' },
+]
+
 const DEFAULT_DATA: AppData = {
   habits: DEFAULT_HABITS,
   categories: DEFAULT_CATEGORIES,
@@ -147,6 +183,8 @@ const DEFAULT_DATA: AppData = {
   rewards: DEFAULT_REWARDS,
   financeCategories: DEFAULT_FINANCE_CATEGORIES,
   transactions: [],
+  taskLists: DEFAULT_TASK_LISTS,
+  tasks: [],
   xp: 0,
   level: 1,
   gold: 0,
@@ -168,7 +206,9 @@ function normalizeAppData(parsed: Partial<AppData>): Partial<AppData> {
   const habits     = parsed.habits ? migrateHabitCategories(parsed.habits, categories) : parsed.habits
   const financeCategories = parsed.financeCategories?.length ? parsed.financeCategories : DEFAULT_FINANCE_CATEGORIES
   const transactions      = parsed.transactions ?? []
-  return { ...parsed, categories, rewards, financeCategories, transactions, ...(habits ? { habits } : {}) }
+  const taskLists         = parsed.taskLists?.length ? parsed.taskLists : DEFAULT_TASK_LISTS
+  const tasks             = parsed.tasks ?? []
+  return { ...parsed, categories, rewards, financeCategories, transactions, taskLists, tasks, ...(habits ? { habits } : {}) }
 }
 
 // ── Tipos del contexto ──────────────────────────────────
@@ -308,7 +348,27 @@ function useAppDataInternal() {
   const updateFinanceCategory = (c: FinanceCategory) => setData(prev => ({ ...prev, financeCategories: prev.financeCategories.map(x => x.id === c.id ? c : x) }))
   const deleteFinanceCategory = (id: string)         => setData(prev => ({ ...prev, financeCategories: prev.financeCategories.filter(c => c.id !== id) }))
 
-  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory }
+  // ── Tareas (To-Do) ──
+  const addTask    = (t: Task) => setData(prev => ({ ...prev, tasks: [...prev.tasks, t] }))
+  const updateTask = (t: Task) => setData(prev => ({ ...prev, tasks: prev.tasks.map(x => x.id === t.id ? t : x) }))
+  const deleteTask = (id: string) => setData(prev => ({ ...prev, tasks: prev.tasks.filter(t => t.id !== id) }))
+  const toggleTask = (id: string) => setData(prev => ({
+    ...prev,
+    tasks: prev.tasks.map(t => t.id === id
+      ? { ...t, completed: !t.completed, completedAt: !t.completed ? new Date().toISOString() : undefined }
+      : t),
+  }))
+  const toggleSubtask = (taskId: string, subId: string) => setData(prev => ({
+    ...prev,
+    tasks: prev.tasks.map(t => t.id === taskId
+      ? { ...t, subtasks: t.subtasks.map(s => s.id === subId ? { ...s, done: !s.done } : s) }
+      : t),
+  }))
+  const addTaskList    = (l: TaskList) => setData(prev => ({ ...prev, taskLists: [...prev.taskLists, l] }))
+  const updateTaskList = (l: TaskList) => setData(prev => ({ ...prev, taskLists: prev.taskLists.map(x => x.id === l.id ? l : x) }))
+  const deleteTaskList = (id: string)  => setData(prev => ({ ...prev, taskLists: prev.taskLists.filter(l => l.id !== id), tasks: prev.tasks.filter(t => t.listId !== id) }))
+
+  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList }
 }
 
 export const getTodayKey  = () => new Date().toISOString().split('T')[0]

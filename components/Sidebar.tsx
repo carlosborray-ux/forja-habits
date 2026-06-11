@@ -9,6 +9,7 @@ const NAV = [
   { path: '/agenda',       icon: '📅',  label: 'Agenda'    },
   { path: '/body',         icon: '⚖️',  label: 'Body'      },
   { path: '/finanzas',     icon: '💰',  label: 'Finanzas'  },
+  { path: '/tareas',       icon: '📝',  label: 'Tareas'    },
   { path: '/journal',      icon: '🧠',  label: 'Journal'   },
   { path: '/analytics',    icon: '📊',  label: 'Analytics' },
   { path: '/achievements', icon: '🏆',  label: 'Logros'    },
