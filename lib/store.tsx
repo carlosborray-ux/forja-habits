@@ -258,7 +258,13 @@ function useAppDataInternal() {
   })
   const setWater          = (date: string, glasses: number) => setData(prev => ({ ...prev, water: { ...prev.water, [date]: { date, glasses, goal: 8 } } }))
   const addCategory       = (c: Category)   => setData(prev => ({ ...prev, categories: [...prev.categories, c] }))
-  const updateCategory    = (c: Category)   => setData(prev => ({ ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x) }))
+  const updateCategory    = (c: Category)   => setData(prev => {
+    const old = prev.categories.find(x => x.id === c.id)
+    const habits = old && old.name !== c.name
+      ? prev.habits.map(h => h.category === old.name ? { ...h, category: c.name } : h)
+      : prev.habits
+    return { ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x), habits }
+  })
   const deleteCategory    = (id: string)    => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
   const logout            = ()              => supabase.auth.signOut()
 
