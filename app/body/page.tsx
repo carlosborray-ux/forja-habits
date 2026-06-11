@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export default function BodyPage() {
-  const { data, addWeight } = useAppData()
+  const { data, addWeight, deleteWeight } = useAppData()
   const today = new Date().toISOString().split('T')[0]
 
   const [weight, setWeight]     = useState('')
@@ -255,6 +255,9 @@ export default function BodyPage() {
                       {w.notes && <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', flex: 1 }}>{w.notes}</span>}
                       <button onClick={() => openEdit(w)} style={{ marginLeft: 'auto', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
                         ✏️ Editar
+                      </button>
+                      <button onClick={() => deleteWeight(w.date)} style={{ background: 'none', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '4px 10px', color: 'var(--accent-coral)', cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>
+                        ✕
                       </button>
                     </>
                   )}

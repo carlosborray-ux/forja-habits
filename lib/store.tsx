@@ -243,6 +243,7 @@ function useAppDataInternal() {
   }
 
   const addWeight         = (e: WeightEntry) => setData(prev => ({ ...prev, weights: [...prev.weights.filter(w => w.date !== e.date), e].sort((a,b) => a.date.localeCompare(b.date)) }))
+  const deleteWeight      = (date: string)   => setData(prev => ({ ...prev, weights: prev.weights.filter(w => w.date !== date) }))
   const saveJournal       = (date: string, e: JournalEntry) => setData(prev => ({ ...prev, journal: { ...prev.journal, [date]: e } }))
   const addAgendaBlock    = (b: AgendaBlock) => setData(prev => ({ ...prev, agenda: [...prev.agenda, b] }))
   const updateAgendaBlock = (b: AgendaBlock) => setData(prev => ({ ...prev, agenda: prev.agenda.map(x => x.id === b.id ? b : x) }))
@@ -265,7 +266,7 @@ function useAppDataInternal() {
   const deleteCategory    = (id: string)    => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
   const logout            = ()              => supabase.auth.signOut()
 
-  return { data, loaded, logout, toggleHabit, addWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
+  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory }
 }
 
 export const getTodayKey  = () => new Date().toISOString().split('T')[0]
