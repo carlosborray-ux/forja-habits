@@ -1,10 +1,14 @@
 'use client'
 import { useState } from 'react'
 import { useAppData, Task, TaskList, SubTask } from '@/lib/store'
-import { format, addDays, isToday, isTomorrow, isPast } from 'date-fns'
+import {
+  format, addDays, isToday, isTomorrow, isPast,
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth,
+  addMonths, subMonths,
+} from 'date-fns'
 import { es } from 'date-fns/locale'
 
-type View = 'today' | 'upcoming' | 'all' | 'completed' | string // string = listId
+type View = 'today' | 'upcoming' | 'all' | 'completed' | 'calendar' | string // string = listId
 
 const ICONS  = ['📥','💼','🏠','🛒','🎯','📚','💡','✈️','🩺','🐶','🎮','💰','🎓','🧹','🔧','📞','🎨','🌱']
 const COLORS = ['#7C6FFF','#00E5B8','#FF6B6B','#FFD93D','#4FC3F7','#FF4FA3','#FF8C00','#9B59B6','#2ECC71','#E74C3C']
@@ -70,6 +74,13 @@ export default function TareasPage() {
   const [listModal, setListModal] = useState(false)
   const [editingList, setEditingList] = useState<TaskList | null>(null)
   const [listForm, setListForm] = useState(emptyList())
+
+  const [planQueue, setPlanQueue] = useState<Task[] | null>(null)
+  const [planIndex, setPlanIndex] = useState(0)
+
+  const [calendarMonth, setCalendarMonth] = useState(new Date())
+  const [calendarDay, setCalendarDay] = useState<string | null>(null)
+  const [calendarQuickTitle, setCalendarQuickTitle] = useState('')
 
   if (!loaded) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -141,6 +152,30 @@ export default function TareasPage() {
     }
   }
 
+  const postpone = (t: Task, dueDate?: string) => updateTask({ ...t, dueDate })
+
+  // ── Plan my day ──
+  const startPlanMyDay = () => {
+    if (todayTasks.length === 0) return
+    setPlanQueue(sortTasks(todayTasks))
+    setPlanIndex(0)
+  }
+  const planAdvance = () => {
+    if (!planQueue) return
+    if (planIndex + 1 >= planQueue.length) { setPlanQueue(null); setPlanIndex(0) }
+    else setPlanIndex(i => i + 1)
+  }
+  const planCurrent = planQueue?.[planIndex] ?? null
+
+  // ── Calendario ──
+  const calStart = startOfWeek(startOfMonth(calendarMonth), { weekStartsOn: 1 })
+  const calEnd   = endOfWeek(endOfMonth(calendarMonth), { weekStartsOn: 1 })
+  const calDays  = eachDayOfInterval({ start: calStart, end: calEnd })
+  const tasksForDay = (d: Date) => {
+    const k = format(d, 'yyyy-MM-dd')
+    return data.tasks.filter(t => t.dueDate === k)
+  }
+
   const addSubtaskToForm = () => {
     if (!newSubtask.trim()) return
     setForm(p => ({ ...p, subtasks: [...p.subtasks, { id: Date.now().toString(), title: newSubtask.trim(), done: false }] }))
@@ -184,6 +219,7 @@ export default function TareasPage() {
               { id: 'today', icon: '📆', label: 'Hoy', count: todayTasks.length },
               { id: 'upcoming', icon: '🗓️', label: 'Próximos', count: upcomingTasks.length },
               { id: 'all', icon: '📋', label: 'Todas', count: pending.length },
+              { id: 'calendar', icon: '📅', label: 'Calendario', count: 0 },
               { id: 'completed', icon: '✅', label: 'Completadas', count: completedTasks.length },
             ].map(v => (
               <button key={v.id} onClick={() => setView(v.id)} style={{
@@ -224,9 +260,16 @@ export default function TareasPage() {
 
         {/* ── Lista de tareas ── */}
         <div>
-          <div className="section-label" style={{ marginBottom: 10 }}>{title}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div className="section-label" style={{ marginBottom: 0 }}>{title}</div>
+            {view === 'today' && todayTasks.length > 0 && (
+              <button className="btn-primary" onClick={startPlanMyDay} style={{ background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-teal))', fontSize: 13 }}>
+                ▶ Plan my day
+              </button>
+            )}
+          </div>
 
-          {view !== 'completed' && (
+          {view !== 'completed' && view !== 'calendar' && (
             <div className="card" style={{ marginBottom: 12, padding: '10px 14px' }}>
               <div style={{ display: 'flex', gap: 10 }}>
                 <input
@@ -242,7 +285,51 @@ export default function TareasPage() {
             </div>
           )}
 
-          {visibleTasks.length === 0 ? (
+          {view === 'calendar' ? (
+            <div className="card" style={{ padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <button className="btn-ghost" onClick={() => setCalendarMonth(d => subMonths(d, 1))} style={{ padding: '6px 12px' }}>‹</button>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>{format(calendarMonth, 'MMMM yyyy', { locale: es }).toUpperCase()}</span>
+                <button className="btn-ghost" onClick={() => setCalendarMonth(d => addMonths(d, 1))} style={{ padding: '6px 12px' }}>›</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
+                {['L','M','X','J','V','S','D'].map(d => (
+                  <div key={d} style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', fontWeight: 700 }}>{d}</div>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+                {calDays.map(d => {
+                  const dayKey = format(d, 'yyyy-MM-dd')
+                  const dayTasks = tasksForDay(d)
+                  const inMonth = isSameMonth(d, calendarMonth)
+                  const today_ = isToday(d)
+                  return (
+                    <div key={dayKey} onClick={() => setCalendarDay(dayKey)} style={{
+                      minHeight: 76, borderRadius: 9, padding: 6, cursor: 'pointer',
+                      background: today_ ? 'rgba(124,111,255,0.12)' : 'rgba(255,255,255,0.03)',
+                      border: today_ ? '1px solid var(--accent-purple)' : '1px solid transparent',
+                      opacity: inMonth ? 1 : 0.35,
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>{format(d, 'd')}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {dayTasks.slice(0, 3).map(t => {
+                          const list = listFor(t.listId)
+                          return (
+                            <div key={t.id} style={{
+                              fontSize: 10, padding: '1px 4px', borderRadius: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                              background: `${list?.color ?? '#888'}33`, color: t.completed ? 'var(--text-muted)' : 'var(--text-secondary)',
+                              textDecoration: t.completed ? 'line-through' : 'none',
+                            }}>{t.title}</div>
+                          )
+                        })}
+                        {dayTasks.length > 3 && <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>+{dayTasks.length - 3} más</div>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : visibleTasks.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>
               {view === 'completed' ? 'Aún no completas tareas' : '¡Nada pendiente por aquí! ✨'}
             </div>
@@ -302,7 +389,13 @@ export default function TareasPage() {
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                        {!t.completed && (
+                          <>
+                            <button onClick={() => postpone(t, format(addDays(new Date(), 1), 'yyyy-MM-dd'))} title="Posponer a mañana" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 99, cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: '4px 8px' }}>→ Mañana</button>
+                            <button onClick={() => postpone(t, format(addDays(new Date(), 7), 'yyyy-MM-dd'))} title="Posponer 1 semana" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 99, cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: '4px 8px' }}>+1 sem</button>
+                          </>
+                        )}
                         <button onClick={() => openEditTask(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--text-secondary)', padding: '2px 4px' }}>✏️</button>
                         <button onClick={() => deleteTask(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--accent-coral)', padding: '2px 4px', opacity: 0.7 }}>✕</button>
                       </div>
@@ -314,6 +407,92 @@ export default function TareasPage() {
           )}
         </div>
       </div>
+
+      {/* ── Modal Plan my day ── */}
+      {planQueue && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1003, backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setPlanQueue(null) }}>
+          <div className="card" style={{ width: 420, padding: 28 }}>
+            <h2 className="gradient-text-purple" style={{ fontSize: 18, fontWeight: 900, marginBottom: 4 }}>▶ Plan my day</h2>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>Tarea {planIndex + 1} de {planQueue.length}</div>
+
+            {planCurrent && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 16 }}>{listFor(planCurrent.listId)?.icon}</span>
+                  <span style={{ fontSize: 16, fontWeight: 700 }}>{planCurrent.title}</span>
+                </div>
+                {planCurrent.priority > 0 && (
+                  <div style={{ fontSize: 12, fontWeight: 700, color: priorityColor(planCurrent.priority), marginBottom: 16 }}>
+                    Prioridad {PRIORITIES.find(p => p.id === planCurrent.priority)?.label}
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>¿Qué hacemos con esta tarea?</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button className="btn-primary" onClick={() => { postpone(planCurrent, todayStr); planAdvance() }}>✅ Hacerla hoy</button>
+                  <button className="btn-ghost" onClick={() => { postpone(planCurrent, format(addDays(new Date(), 1), 'yyyy-MM-dd')); planAdvance() }}>→ Mover a mañana</button>
+                  <button className="btn-ghost" onClick={() => { postpone(planCurrent, format(addDays(new Date(), 7), 'yyyy-MM-dd')); planAdvance() }}>→ Próxima semana</button>
+                  <button className="btn-ghost" onClick={() => { postpone(planCurrent, undefined); planAdvance() }}>🗑 Quitar fecha</button>
+                  <button onClick={() => { toggleTask(planCurrent.id); planAdvance() }} style={{ background: 'rgba(0,229,184,0.1)', border: '1px solid rgba(0,229,184,0.3)', borderRadius: 9, padding: '9px', color: 'var(--accent-teal)', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>✓ Ya la completé</button>
+                </div>
+              </>
+            )}
+
+            <button onClick={() => setPlanQueue(null)} className="btn-ghost" style={{ width: '100%', marginTop: 16 }}>Cerrar</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal día (Calendario) ── */}
+      {calendarDay && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1003, backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) { setCalendarDay(null); setCalendarQuickTitle('') } }}>
+          <div className="card" style={{ width: 420, padding: 28, maxHeight: '85vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 16 }}>
+              {format(new Date(calendarDay + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })}
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {data.tasks.filter(t => t.dueDate === calendarDay).length === 0 && (
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Sin tareas este día</div>
+              )}
+              {data.tasks.filter(t => t.dueDate === calendarDay).map(t => {
+                const list = listFor(t.listId)
+                return (
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, borderLeft: `3px solid ${list?.color ?? '#888'}` }}>
+                    <button onClick={() => handleToggle(t)} style={{
+                      width: 18, height: 18, borderRadius: '50%', border: `2px solid ${priorityColor(t.priority)}`,
+                      background: t.completed ? priorityColor(t.priority) : 'transparent', cursor: 'pointer', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'white', padding: 0,
+                    }}>{t.completed ? '✓' : ''}</button>
+                    <span style={{ flex: 1, fontSize: 13, textDecoration: t.completed ? 'line-through' : 'none', color: t.completed ? 'var(--text-muted)' : 'var(--text-primary)' }}>{t.title}</span>
+                    <button onClick={() => { setCalendarDay(null); openEditTask(t) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text-secondary)', padding: '2px 4px' }}>✏️</button>
+                    <button onClick={() => deleteTask(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--accent-coral)', padding: '2px 4px', opacity: 0.7 }}>✕</button>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={calendarQuickTitle}
+                onChange={e => setCalendarQuickTitle(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && calendarQuickTitle.trim()) {
+                    addTask({ id: Date.now().toString(), createdAt: new Date().toISOString(), title: calendarQuickTitle.trim(), notes: '', listId: data.taskLists[0]?.id ?? 't1', dueDate: calendarDay, priority: 0, completed: false, subtasks: [], recurring: 'none' })
+                    setCalendarQuickTitle('')
+                  }
+                }}
+                placeholder="+ Agregar tarea para este día..."
+                className="input-glass"
+                style={{ flex: 1 }}
+              />
+            </div>
+
+            <button onClick={() => { setCalendarDay(null); setCalendarQuickTitle('') }} className="btn-ghost" style={{ width: '100%', marginTop: 16 }}>Cerrar</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal Tarea ── */}
       {taskModal && (
