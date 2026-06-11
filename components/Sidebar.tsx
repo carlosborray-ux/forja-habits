@@ -1,19 +1,20 @@
 'use client'
+import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAppData } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 
 const NAV = [
-  { path: '/',             icon: '⚔️',  label: 'Dashboard' },
-  { path: '/habits',       icon: '✅',  label: 'Hábitos'   },
-  { path: '/agenda',       icon: '📅',  label: 'Agenda'    },
-  { path: '/body',         icon: '⚖️',  label: 'Body'      },
-  { path: '/finanzas',     icon: '💰',  label: 'Finanzas'  },
-  { path: '/tareas',       icon: '📝',  label: 'To Do'     },
-  { path: '/journal',      icon: '🧠',  label: 'Journal'   },
-  { path: '/analytics',    icon: '📊',  label: 'Analytics' },
-  { path: '/achievements', icon: '🏆',  label: 'Logros'    },
-  { path: '/rewards',      icon: '🎁',  label: 'Recompensas'},
+  { path: '/',             icon: '⚔️',  label: 'Dashboard',  desc: 'Resumen general: nivel, oro, progreso del día y accesos rápidos.' },
+  { path: '/habits',       icon: '✅',  label: 'Hábitos',    desc: 'Marca tus hábitos diarios por categoría y sigue tus rachas.' },
+  { path: '/agenda',       icon: '📅',  label: 'Agenda',     desc: 'Planifica tus bloques de tiempo y actividades del día.' },
+  { path: '/body',         icon: '⚖️',  label: 'Body',       desc: 'Registra tu peso e indicadores corporales en el tiempo.' },
+  { path: '/finanzas',     icon: '💰',  label: 'Finanzas',   desc: 'Controla ingresos, gastos, presupuestos y recibe análisis IA.' },
+  { path: '/tareas',       icon: '📝',  label: 'To Do',      desc: 'Organiza tus pendientes por listas, fechas y prioridades.' },
+  { path: '/journal',      icon: '🧠',  label: 'Journal',    desc: 'Anota tu estado de ánimo, energía, gratitud y reflexiones diarias.' },
+  { path: '/analytics',    icon: '📊',  label: 'Analytics',  desc: 'Estadísticas y tendencias de tu progreso general.' },
+  { path: '/achievements', icon: '🏆',  label: 'Logros',     desc: 'Revisa los logros e insignias que has desbloqueado.' },
+  { path: '/rewards',      icon: '🎁',  label: 'Recompensas',desc: 'Cambia tu oro acumulado por recompensas personalizadas.' },
 ]
 
 export default function Sidebar() {
@@ -25,6 +26,8 @@ export default function Sidebar() {
 
   const todayStr = new Date().toISOString().split('T')[0]
   const pendingToday = data.tasks.filter(t => !t.completed && t.dueDate && t.dueDate <= todayStr).length
+
+  const [hovered, setHovered] = useState<string | null>(null)
 
   return (
     <aside style={{
@@ -77,27 +80,43 @@ export default function Sidebar() {
         {NAV.map(item => {
           const active = pathname === item.path
           return (
-            <button key={item.path} onClick={() => router.push(item.path)} style={{
-              width: '100%',
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-              marginBottom: 2,
-              background: active ? 'rgba(124,111,255,0.15)' : 'transparent',
-              color: active ? 'var(--accent-purple)' : 'var(--text-secondary)',
-              fontWeight: active ? 700 : 400, fontSize: 15,
-              textAlign: 'left',
-              transition: 'all 0.15s ease',
-              boxShadow: active ? 'inset 3px 0 0 var(--accent-purple)' : 'none',
-            }}>
-              <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {item.path === '/tareas' && pendingToday > 0 && (
-                <span style={{
-                  background: 'var(--accent-coral)', color: 'white', fontSize: 11, fontWeight: 700,
-                  borderRadius: 99, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
-                }}>{pendingToday}</span>
+            <div key={item.path} style={{ position: 'relative' }}
+              onMouseEnter={() => setHovered(item.path)}
+              onMouseLeave={() => setHovered(null)}>
+              <button onClick={() => router.push(item.path)} style={{
+                width: '100%',
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                marginBottom: 2,
+                background: active ? 'rgba(124,111,255,0.15)' : 'transparent',
+                color: active ? 'var(--accent-purple)' : 'var(--text-secondary)',
+                fontWeight: active ? 700 : 400, fontSize: 15,
+                textAlign: 'left',
+                transition: 'all 0.15s ease',
+                boxShadow: active ? 'inset 3px 0 0 var(--accent-purple)' : 'none',
+              }}>
+                <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{item.icon}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {item.path === '/tareas' && pendingToday > 0 && (
+                  <span style={{
+                    background: 'var(--accent-coral)', color: 'white', fontSize: 11, fontWeight: 700,
+                    borderRadius: 99, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
+                  }}>{pendingToday}</span>
+                )}
+              </button>
+              {hovered === item.path && (
+                <div style={{
+                  position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)',
+                  marginLeft: 10, padding: '8px 12px', borderRadius: 9,
+                  background: 'var(--bg-card-solid)', border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)', fontSize: 12, fontWeight: 400, lineHeight: 1.4,
+                  width: 200, zIndex: 300, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  pointerEvents: 'none',
+                }}>
+                  {item.desc}
+                </div>
               )}
-            </button>
+            </div>
           )
         })}
       </nav>
