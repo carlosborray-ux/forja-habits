@@ -63,7 +63,7 @@ export default function WarRoom() {
 
       {/* ── Quote of the Day ── */}
       <div className="card" style={{ marginBottom: 20, borderColor: 'rgba(124,111,255,0.3)', background: 'rgba(124,111,255,0.06)', padding: '16px 22px' }}>
-        <div style={{ fontSize: 10, color: 'var(--accent-purple)', letterSpacing: 2, fontWeight: 700, marginBottom: 6 }}>💡 QUOTE DEL DÍA</div>
+        <div style={{ fontSize: 12, color: 'var(--accent-purple)', letterSpacing: 2, fontWeight: 700, marginBottom: 6 }}>💡 QUOTE DEL DÍA</div>
         <div style={{ fontSize: 15, color: 'var(--text-primary)', fontStyle: 'italic', lineHeight: 1.5 }}>"{quote.text}"</div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>— {quote.author}</div>
       </div>
@@ -99,7 +99,7 @@ export default function WarRoom() {
             </div>
           </div>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>
               <span>Nivel {data.level}</span>
               <span>{xpToNext} XP → nivel {data.level + 1}</span>
             </div>
@@ -127,13 +127,13 @@ export default function WarRoom() {
                     <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, borderLeft: `3px solid ${h.color}` }}>
                       <span style={{ fontSize: 14 }}>{h.icon}</span>
                       <span style={{ fontSize: 12, color: 'var(--text-secondary)', flex: 1 }}>{h.name}</span>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{h.category}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{h.category}</span>
                     </div>
                   ))}
                 </div>
               )}
               {!allDone && (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
                   {pendientes.length} de {data.habits.length} sin marcar
                 </div>
               )}
@@ -152,7 +152,7 @@ export default function WarRoom() {
             {last7.map(d => (
               <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                 {d.score > 0 && (
-                  <div style={{ fontSize: 11, fontWeight: 700, color: d.score >= 80 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: d.score >= 80 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
                     {d.score}%
                   </div>
                 )}
@@ -168,7 +168,7 @@ export default function WarRoom() {
                   boxShadow: d.key === today ? '0 0 16px rgba(124,111,255,0.5)' : 'none',
                   transition: 'height 0.5s ease',
                 }} />
-                <div style={{ fontSize: 11, color: d.key === today ? 'var(--accent-purple)' : 'var(--text-muted)', fontWeight: d.key === today ? 700 : 400 }}>
+                <div style={{ fontSize: 13, color: d.key === today ? 'var(--accent-purple)' : 'var(--text-muted)', fontWeight: d.key === today ? 700 : 400 }}>
                   {d.label}
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default function WarRoom() {
               <div style={{ fontSize: 20, fontWeight: 900, color: h.streak > 7 ? 'var(--accent-gold)' : h.streak > 0 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
                 {h.streak > 0 ? h.streak : '—'}
               </div>
-              {h.streak > 0 && <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>días</div>}
+              {h.streak > 0 && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>días</div>}
             </div>
           ))}
         </div>
@@ -222,7 +222,7 @@ export default function WarRoom() {
             <div key={stack} style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 1 }}>{stack?.toUpperCase()}</span>
-                <span style={{ fontSize: 11, color: 'var(--accent-teal)' }}>{stackDone}/{stackHabits.length}</span>
+                <span style={{ fontSize: 13, color: 'var(--accent-teal)' }}>{stackDone}/{stackHabits.length}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: 8 }}>
                 {stackHabits.map(h => {
