@@ -231,7 +231,9 @@ html, body {
   aside { display: none !important; }
 
   /* Main sin margen izquierdo, con espacio abajo para bottom nav */
-  main { margin-left: 0 !important; padding-bottom: 72px !important; }
+  /* min-width:0 evita que el contenido ancho (tabla de hábitos) expanda
+     el item flex y haga scroll horizontal a toda la página */
+  main { margin-left: 0 !important; padding-bottom: 72px !important; min-width: 0 !important; max-width: 100vw !important; overflow-x: hidden !important; }
 
   /* Bottom nav */
   .bottom-nav {
@@ -241,6 +243,8 @@ html, body {
   /* Páginas: menos padding */
   .page-content {
     padding: 20px 16px !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
   }
 
   /* Grids → columna única en mobile */
