@@ -371,8 +371,11 @@ function useAppDataInternal() {
   return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList }
 }
 
-export const getTodayKey  = () => new Date().toISOString().split('T')[0]
-export const getDateKey   = (d: Date) => d.toISOString().split('T')[0]
+const COLOMBIA_TZ = 'America/Bogota'
+const colombiaFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: COLOMBIA_TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
+
+export const getTodayKey  = () => colombiaFormatter.format(new Date())
+export const getDateKey   = (d: Date) => colombiaFormatter.format(d)
 
 export function getStreak(habit: Habit): number {
   let streak = 0

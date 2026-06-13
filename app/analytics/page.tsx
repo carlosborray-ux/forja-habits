@@ -1,5 +1,5 @@
 'use client'
-import { useAppData, getDayScore } from '@/lib/store'
+import { useAppData, getDayScore, getTodayKey, getDateKey } from '@/lib/store'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell, ScatterChart, Scatter, LineChart, Line, Area, AreaChart } from 'recharts'
 import { format, eachDayOfInterval, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -8,7 +8,7 @@ export default function AnalyticsPage() {
   const { data } = useAppData()
 
   const last30 = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() }).map(d => {
-    const key = d.toISOString().split('T')[0]
+    const key = getDateKey(d)
     const journal = data.journal[key]
     return {
       key,
@@ -55,7 +55,7 @@ export default function AnalyticsPage() {
 
   // Heat map 84 days
   const heatDays = eachDayOfInterval({ start: subDays(new Date(), 83), end: new Date() })
-  const todayKey = new Date().toISOString().split('T')[0]
+  const todayKey = getTodayKey()
 
   // Best day of week
   const byDow: Record<number, number[]> = {}
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
         {[
           { label: 'PROMEDIO 30D',    value: `${avgScore}%`,            color: 'var(--accent-purple)', icon: '📈' },
           { label: 'DÍAS PERFECTOS',  value: String(perfectDays),        color: 'var(--accent-gold)',   icon: '💎' },
@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Score + Radar */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
         <div className="card">
           <div className="section-label">SCORE DIARIO — 30 DÍAS</div>
           <ResponsiveContainer width="100%" height={190}>
@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Mejor día semana + Mood correlation */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div className="card">
           <div className="section-label">📅 MEJOR DÍA DE LA SEMANA</div>
           <ResponsiveContainer width="100%" height={150}>
@@ -161,9 +161,9 @@ export default function AnalyticsPage() {
       {/* Heat map */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="section-label">HEAT MAP — 12 SEMANAS</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(84, 1fr)', gap: 3 }}>
+        <div className="habits-scroll" style={{ display: 'grid', gridTemplateColumns: 'repeat(84, 1fr)', gap: 3, minWidth: 480 }}>
           {heatDays.map(d => {
-            const key = d.toISOString().split('T')[0]
+            const key = getDateKey(d)
             const s   = getDayScore(data.habits, key)
             return (
               <div key={key} title={`${format(d, 'dd MMM', { locale: es })}: ${s}%`} style={{

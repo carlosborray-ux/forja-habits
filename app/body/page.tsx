@@ -1,13 +1,13 @@
 'use client'
 import { useState } from 'react'
-import { useAppData, WeightEntry } from '@/lib/store'
+import { useAppData, WeightEntry, getTodayKey } from '@/lib/store'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export default function BodyPage() {
   const { data, addWeight, deleteWeight } = useAppData()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayKey()
 
   const [weight, setWeight]     = useState('')
   const [notes, setNotes]       = useState('')
@@ -122,7 +122,7 @@ export default function BodyPage() {
       </div>
 
       {/* ── Stats cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 22 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 22 }}>
         {[
           { label: 'ACTUAL',     value: latest ? `${latest.weight} kg` : '—',              color: 'var(--accent-purple)' },
           { label: 'META',       value: goal ? `${goal} kg` : '—',                          color: 'var(--accent-teal)'  },

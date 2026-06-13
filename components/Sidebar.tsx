@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useAppData } from '@/lib/store'
+import { useAppData, getTodayKey } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 
 const NAV = [
@@ -24,7 +24,7 @@ export default function Sidebar() {
 
   const xpPercent = ((data.xp % 500) / 500) * 100
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getTodayKey()
   const pendingToday = data.tasks.filter(t => !t.completed && t.dueDate && t.dueDate <= todayStr).length
 
   const [hovered, setHovered] = useState<string | null>(null)

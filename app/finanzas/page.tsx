@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useAppData, FinanceCategory, Transaction } from '@/lib/store'
+import { useAppData, FinanceCategory, Transaction, getTodayKey } from '@/lib/store'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import {
   format, subMonths, addMonths,
@@ -34,7 +34,7 @@ export default function FinanzasPage() {
   const [period, setPeriod] = useState<Period>('month')
   const [txModal, setTxModal] = useState(false)
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
-  const [form, setForm] = useState(emptyTx(new Date().toISOString().split('T')[0], 'f1'))
+  const [form, setForm] = useState(emptyTx(getTodayKey(), 'f1'))
 
   const [catModal, setCatModal] = useState(false)
   const [editingCat, setEditingCat] = useState<FinanceCategory | null>(null)
@@ -207,7 +207,7 @@ export default function FinanzasPage() {
   // ── Modal helpers ──
   const openAddTx = () => {
     setEditingTx(null)
-    setForm(emptyTx(new Date().toISOString().split('T')[0], 'f1'))
+    setForm(emptyTx(getTodayKey(), 'f1'))
     setTxModal(true)
   }
   const openEditTx = (t: Transaction) => {

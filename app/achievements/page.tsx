@@ -1,5 +1,5 @@
 'use client'
-import { useAppData, getStreak, getDayScore } from '@/lib/store'
+import { useAppData, getStreak, getDayScore, getDateKey } from '@/lib/store'
 import { subDays, eachDayOfInterval } from 'date-fns'
 
 interface Achievement {
@@ -15,7 +15,7 @@ export default function AchievementsPage() {
   const { data } = useAppData()
 
   const last30 = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() })
-  const perfectDays = last30.filter(d => getDayScore(data.habits, d.toISOString().split('T')[0]) === 100).length
+  const perfectDays = last30.filter(d => getDayScore(data.habits, getDateKey(d)) === 100).length
   const maxStreak = Math.max(0, ...data.habits.map(h => getStreak(h)))
   const totalChecks = data.habits.reduce((s, h) => s + Object.keys(h.completedDays).length, 0)
 
@@ -65,7 +65,7 @@ export default function AchievementsPage() {
             <div style={{ background: 'var(--border)', borderRadius: 8, height: 16, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${xpPercent}%`, background: 'linear-gradient(90deg, var(--accent-gold), var(--accent-coral))', borderRadius: 8, transition: 'width 0.8s ease', boxShadow: '0 0 12px rgba(255,217,61,0.4)' }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 16 }}>
+            <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 16 }}>
               <div style={{ textAlign: 'center', background: 'var(--bg-surface)', borderRadius: 8, padding: '10px' }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--accent-teal)' }}>{totalChecks}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>TOTAL CHECKS</div>

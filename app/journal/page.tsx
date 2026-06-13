@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useAppData, JournalEntry } from '@/lib/store'
+import { useAppData, JournalEntry, getTodayKey } from '@/lib/store'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -16,7 +16,7 @@ const PROMPTS = [
 
 export default function JournalPage() {
   const { data, saveJournal } = useAppData()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayKey()
   const todayEntry = data.journal[today]
 
   const [mood, setMood] = useState(todayEntry?.mood ?? 3)
@@ -48,7 +48,7 @@ export default function JournalPage() {
       </div>
 
       {/* Mood & Energy */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div className="card">
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14 }}>MOOD</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
@@ -97,7 +97,7 @@ export default function JournalPage() {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         <div className="card">
           <div style={{ fontSize: 12, color: 'var(--accent-gold)', marginBottom: 10 }}>🙏 AGRADECIMIENTOS</div>
           <textarea

@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { useAppData } from '@/lib/store'
+import { useAppData, getTodayKey } from '@/lib/store'
 
 const NAV = [
   { path: '/',          icon: '⚔️',  label: 'Home'    },
@@ -19,7 +19,7 @@ export default function BottomNav() {
   const router   = useRouter()
   const { data } = useAppData()
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getTodayKey()
   const pendingToday = data.tasks.filter(t => !t.completed && t.dueDate && t.dueDate <= todayStr).length
 
   return (

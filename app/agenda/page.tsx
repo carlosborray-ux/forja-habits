@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
-import { useAppData, AgendaBlock } from '@/lib/store'
+import { useAppData, AgendaBlock, getDateKey } from '@/lib/store'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -27,7 +27,7 @@ const CAT_LABELS: Record<string, string> = {
 }
 
 function dateKey(d: Date) {
-  return d.toISOString().split('T')[0]
+  return getDateKey(d)
 }
 function toMin(t: string) {
   const [h, m] = t.split(':').map(Number)
@@ -305,7 +305,7 @@ export default function AgendaPage() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>INICIO</div>
                   <input type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}

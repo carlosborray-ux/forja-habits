@@ -1,5 +1,5 @@
 'use client'
-import { useAppData, getTodayKey, getDayScore, getStreak, getMotivationalMessage, getTodayQuote } from '@/lib/store'
+import { useAppData, getTodayKey, getDateKey, getDayScore, getStreak, getMotivationalMessage, getTodayQuote } from '@/lib/store'
 import ProgressRing from '@/components/ProgressRing'
 import { format, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -27,7 +27,7 @@ export default function WarRoom() {
 
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = subDays(new Date(), 6 - i)
-    const key = d.toISOString().split('T')[0]
+    const key = getDateKey(d)
     return { label: format(d, 'EEE', { locale: es }), score: getDayScore(data.habits, key), key }
   })
 
@@ -197,7 +197,7 @@ export default function WarRoom() {
       {/* ── Top streaks ── */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="section-label">🔥 TOP RACHAS</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+        <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
           {topStreaks.map((h, i) => (
             <div key={h.id} style={{ textAlign: 'center', padding: '12px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ fontSize: 22, marginBottom: 4 }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '🔥'}</div>

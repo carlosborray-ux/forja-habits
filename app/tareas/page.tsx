@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useAppData, Task, TaskList, SubTask } from '@/lib/store'
+import { useAppData, Task, TaskList, SubTask, getTodayKey } from '@/lib/store'
 import {
   format, addDays, isToday, isTomorrow, isPast,
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth,
@@ -92,7 +92,7 @@ export default function TareasPage() {
   const pending = data.tasks.filter(t => !t.completed)
 
   const today = new Date()
-  const todayStr = format(today, 'yyyy-MM-dd')
+  const todayStr = getTodayKey()
   const in7 = format(addDays(today, 7), 'yyyy-MM-dd')
 
   const todayTasks    = pending.filter(t => t.dueDate && (t.dueDate <= todayStr))
@@ -210,7 +210,7 @@ export default function TareasPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="tareas-layout" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20, alignItems: 'start' }}>
 
         {/* ── Sidebar de vistas/listas ── */}
         <div className="card" style={{ padding: 14 }}>
