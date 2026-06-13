@@ -244,7 +244,15 @@ export default function AgendaPage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 4 }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: short ? 10 : 12, fontWeight: 700, color: b.done ? 'var(--text-muted)' : 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: b.done ? 'line-through' : 'none' }}>
+                        <div style={short ? {
+                          fontSize: 10, fontWeight: 700, color: b.done ? 'var(--text-muted)' : 'var(--text-primary)',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: b.done ? 'line-through' : 'none',
+                        } : {
+                          fontSize: 12, fontWeight: 700, color: b.done ? 'var(--text-muted)' : 'var(--text-primary)',
+                          textDecoration: b.done ? 'line-through' : 'none',
+                          display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2,
+                          overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-word', lineHeight: 1.2,
+                        }}>
                           {b.title}
                         </div>
                         {!short && (

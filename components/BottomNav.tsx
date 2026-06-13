@@ -30,7 +30,7 @@ export default function BottomNav() {
           <button key={item.path} onClick={() => router.push(item.path)} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
             background: 'none', border: 'none', cursor: 'pointer',
-            padding: '6px 8px', borderRadius: 10, flex: 1, position: 'relative',
+            padding: '6px 8px', borderRadius: 10, flex: '0 0 auto', minWidth: 56, position: 'relative',
             color: active ? 'var(--accent-purple)' : 'var(--text-muted)',
             transition: 'all 0.15s',
           }}>
