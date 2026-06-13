@@ -46,15 +46,11 @@ const MOTIVATION_GOAL_REACHED = [
 ]
 
 export default function BodyPage() {
-  const { data, addWeight, deleteWeight } = useAppData()
+  const { data, addWeight, deleteWeight, setGoalWeight } = useAppData()
   const today = getTodayKey()
 
   const [weight, setWeight]     = useState('')
   const [notes, setNotes]       = useState('')
-  const [goalWeight, setGoalWeight] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem('forja-goal-weight') ?? ''
-    return ''
-  })
   const [editingGoal, setEditingGoal] = useState(false)
   const [goalInput, setGoalInput]   = useState('')
 
@@ -66,7 +62,7 @@ export default function BodyPage() {
   const sorted = [...data.weights].sort((a, b) => a.date.localeCompare(b.date))
   const latest = sorted[sorted.length - 1]
   const first  = sorted[0]
-  const goal   = goalWeight ? parseFloat(goalWeight) : null
+  const goal   = data.goalWeight ?? null
   const totalChange = latest && first ? +(latest.weight - first.weight).toFixed(1) : null
 
   // % hacia la meta
@@ -96,8 +92,7 @@ export default function BodyPage() {
   const saveGoal = () => {
     const g = parseFloat(goalInput)
     if (!isNaN(g) && g > 0) {
-      localStorage.setItem('forja-goal-weight', String(g))
-      setGoalWeight(String(g))
+      setGoalWeight(g)
     }
     setEditingGoal(false)
   }
@@ -165,7 +160,7 @@ export default function BodyPage() {
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 1 }}>META</div>
                 <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--accent-teal)' }}>{goal ? `${goal} kg` : '—'}</div>
               </div>
-              <button onClick={() => { setGoalInput(goalWeight); setEditingGoal(true) }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 7, padding: '6px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
+              <button onClick={() => { setGoalInput(goal ? String(goal) : ''); setEditingGoal(true) }} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 7, padding: '6px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
                 {goal ? '✏️' : '+ Fijar meta'}
               </button>
             </>

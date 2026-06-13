@@ -303,7 +303,9 @@ export default function HabitsPage() {
 
             {/* ── Fila días (letra + número) ── */}
             <tr>
-              <th className="sticky-col" style={{ textAlign: 'left', padding: '4px 12px', fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1, position: 'sticky', left: 0, zIndex: 3, background: 'var(--bg-card-solid)' }}>HÁBITO</th>
+              <th style={{ padding: 0 }}>
+                <div className="sticky-col" style={{ position: 'sticky', left: 0, zIndex: 3, background: 'var(--bg-card-solid)', textAlign: 'left', padding: '4px 12px', fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1 }}>HÁBITO</div>
+              </th>
               {days.map(d => (
                 <th key={d.key} style={{
                   textAlign: 'center', padding: '4px 0', fontSize: 11,
@@ -363,12 +365,14 @@ export default function HabitsPage() {
                   const pct    = getHabitMonthPct(h, year, month)
                   return (
                     <tr key={h.id} style={{ background: 'rgba(255,255,255,0.025)' }}>
-                      <td className="sticky-col" style={{ padding: '9px 12px', borderRadius: '8px 0 0 8px', borderLeft: `3px solid ${h.color}`, overflow: 'hidden', position: 'sticky', left: 0, zIndex: 2, background: 'var(--bg-card-solid)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <span style={{ fontSize: 18, flexShrink: 0 }}>{h.icon}</span>
-                          <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
-                            {h.stack && <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 99, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.stack}</span>}
+                      <td style={{ padding: 0 }}>
+                        <div className="sticky-col" style={{ position: 'sticky', left: 0, zIndex: 2, background: 'var(--bg-card-solid)', padding: '9px 12px', borderRadius: '8px 0 0 8px', borderLeft: `3px solid ${h.color}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                            <span style={{ fontSize: 18, flexShrink: 0 }}>{h.icon}</span>
+                            <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
+                              {h.stack && <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 99, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.stack}</span>}
+                            </div>
                           </div>
                         </div>
                       </td>

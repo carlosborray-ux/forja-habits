@@ -119,6 +119,7 @@ export interface AppData {
   level: number
   gold: number
   identity: string
+  goalWeight: number | null
 }
 
 const DEFAULT_HABITS: Habit[] = [
@@ -189,6 +190,7 @@ const DEFAULT_DATA: AppData = {
   level: 1,
   gold: 0,
   identity: 'Élite',
+  goalWeight: null,
 }
 
 // Migra hábitos cuyo `category` quedó guardado como nombre (legado) a su id estable
@@ -208,7 +210,8 @@ function normalizeAppData(parsed: Partial<AppData>): Partial<AppData> {
   const transactions      = parsed.transactions ?? []
   const taskLists         = parsed.taskLists?.length ? parsed.taskLists : DEFAULT_TASK_LISTS
   const tasks             = parsed.tasks ?? []
-  return { ...parsed, categories, rewards, financeCategories, transactions, taskLists, tasks, ...(habits ? { habits } : {}) }
+  const goalWeight        = parsed.goalWeight ?? null
+  return { ...parsed, categories, rewards, financeCategories, transactions, taskLists, tasks, goalWeight, ...(habits ? { habits } : {}) }
 }
 
 // ── Tipos del contexto ──────────────────────────────────
@@ -339,6 +342,7 @@ function useAppDataInternal() {
   const updateCategory    = (c: Category)   => setData(prev => ({ ...prev, categories: prev.categories.map(x => x.id === c.id ? c : x) }))
   const deleteCategory    = (id: string)    => setData(prev => ({ ...prev, categories: prev.categories.filter(c => c.id !== id) }))
   const logout            = ()              => supabase.auth.signOut()
+  const setGoalWeight     = (g: number | null) => setData(prev => ({ ...prev, goalWeight: g }))
 
   // ── Finanzas ──
   const addTransaction    = (t: Transaction) => setData(prev => ({ ...prev, transactions: [...prev.transactions, t] }))
@@ -368,7 +372,7 @@ function useAppDataInternal() {
   const updateTaskList = (l: TaskList) => setData(prev => ({ ...prev, taskLists: prev.taskLists.map(x => x.id === l.id ? l : x) }))
   const deleteTaskList = (id: string)  => setData(prev => ({ ...prev, taskLists: prev.taskLists.filter(l => l.id !== id), tasks: prev.tasks.filter(t => t.listId !== id) }))
 
-  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList }
+  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, setGoalWeight, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList }
 }
 
 const COLOMBIA_TZ = 'America/Bogota'
