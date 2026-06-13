@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppData, WeightEntry, getTodayKey } from '@/lib/store'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format } from 'date-fns'
@@ -46,8 +46,22 @@ const MOTIVATION_GOAL_REACHED = [
 ]
 
 export default function BodyPage() {
-  const { data, addWeight, deleteWeight, setGoalWeight } = useAppData()
+  const { data, loaded, addWeight, deleteWeight, setGoalWeight } = useAppData()
   const today = getTodayKey()
+
+  // Migración: si esta cuenta no tiene meta sincronizada pero este dispositivo
+  // tenía una guardada localmente (versión anterior), la migramos a los datos sincronizados.
+  useEffect(() => {
+    if (!loaded) return
+    if (data.goalWeight == null) {
+      const legacy = localStorage.getItem('forja-goal-weight')
+      if (legacy) {
+        const g = parseFloat(legacy)
+        if (!isNaN(g) && g > 0) setGoalWeight(g)
+        localStorage.removeItem('forja-goal-weight')
+      }
+    }
+  }, [loaded, data.goalWeight, setGoalWeight])
 
   const [weight, setWeight]     = useState('')
   const [notes, setNotes]       = useState('')
