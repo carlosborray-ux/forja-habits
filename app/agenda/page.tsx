@@ -138,8 +138,12 @@ export default function AgendaPage() {
         </div>
       </div>
 
+      {/* ── Área scrolleable (header semana + grilla) ── */}
+      <div className="agenda-scroll" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 52 + 7 * 96 }}>
+
       {/* ── Week header ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '52px repeat(7, 1fr)', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(12px)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '52px repeat(7, minmax(96px, 1fr))', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(12px)' }}>
         <div />
         {weekDays.map(d => {
           const k = dateKey(d)
@@ -172,7 +176,7 @@ export default function AgendaPage() {
       </div>
 
       {/* ── Grid ── */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: '52px repeat(7, 1fr)' }} ref={gridRef}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: '52px repeat(7, minmax(96px, 1fr))' }} ref={gridRef}>
 
         {/* Time labels */}
         <div style={{ position: 'relative', height: TOTAL_H }}>
@@ -263,6 +267,9 @@ export default function AgendaPage() {
             </div>
           )
         })}
+      </div>
+
+      </div>
       </div>
 
       {/* ── Load defaults bar (if today is empty) ── */}

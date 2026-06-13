@@ -272,6 +272,10 @@ html, body {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
   }
+  .agenda-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
 
   /* Modales: que no se salgan de la pantalla */
   .card {

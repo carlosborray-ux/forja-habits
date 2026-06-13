@@ -315,7 +315,7 @@ export default function BodyPage() {
               const prev = sorted.find((_, i) => sorted[i + 1]?.date === w.date)
               const delta = prev ? +(w.weight - prev.weight).toFixed(1) : null
               return (
-                <div key={w.date} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 9 }}>
+                <div key={w.date} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 9 }}>
                   {isEdit ? (
                     <>
                       <span style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 140 }}>{format(new Date(w.date + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })}</span>
@@ -335,7 +335,7 @@ export default function BodyPage() {
                           {delta > 0 ? '+' : ''}{delta} kg
                         </span>
                       )}
-                      {w.notes && <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', flex: 1 }}>{w.notes}</span>}
+                      {w.notes && <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', flex: '1 1 100%', whiteSpace: 'normal', wordBreak: 'break-word' }}>{w.notes}</span>}
                       <button onClick={() => openEdit(w)} style={{ marginLeft: 'auto', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
                         ✏️ Editar
                       </button>
