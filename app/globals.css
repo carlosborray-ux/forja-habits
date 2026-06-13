@@ -267,11 +267,6 @@ html, body {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Columna de nombre de hábito fija al hacer scroll horizontal */
-  .sticky-col {
-    box-shadow: 4px 0 8px -2px rgba(0,0,0,0.4);
-  }
-
   /* Agenda calendario semanal — scroll */
   .agenda-grid {
     overflow-x: auto !important;

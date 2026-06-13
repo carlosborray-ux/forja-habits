@@ -156,286 +156,313 @@ export default function HabitsPage() {
         })}
       </div>
 
-      {/* ── Una sola tabla: header + grupos en tbody (incluye gráfico arriba, alineado) ── */}
-      <div className="habits-scroll" style={{ overflowX: 'auto' }}>
-      {/* ── Gráfico de línea mensual ── */}
-      {(() => {
-        const COL0 = 220, COL = 54
-        const W = COL0 + days.length * COL, H = 120, PAD = { top: 24, right: 0, bottom: 30, left: COL0 }
-        const innerW = W - PAD.left - PAD.right
-        const innerH = H - PAD.top - PAD.bottom
-        const pts = dayScores.map((d, i) => ({
-          x: PAD.left + (i + 0.5) * COL,
-          y: PAD.top + innerH - (d.score / 100) * innerH,
-          score: d.score,
-          key: d.key,
-          n: d.n,
-        }))
-        const todayIdx = dayScores.findIndex(d => d.key === today)
-        const polyline = pts.map(p => `${p.x},${p.y}`).join(' ')
-        // Área rellena debajo
-        const areaPath = `M${pts[0].x},${PAD.top + innerH} ` +
-          pts.map(p => `L${p.x},${p.y}`).join(' ') +
-          ` L${pts[pts.length - 1].x},${PAD.top + innerH} Z`
-        return (
-          <div className="card" style={{ marginBottom: 6, padding: '14px 0 8px', overflow: 'hidden', width: 220 + days.length * 54 + 266 }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6, padding: '0 16px' }}>
-              PROGRESO DEL MES — {format(viewMonth, 'MMMM yyyy', { locale: es }).toUpperCase()}
-              <span style={{ marginLeft: 12, color: 'var(--accent-teal)', fontWeight: 700 }}>
-                {Math.round(dayScores.filter(d => d.score > 0).reduce((a, d) => a + d.score, 0) / (dayScores.filter(d => d.score > 0).length || 1))}% promedio
-              </span>
-            </div>
-            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ display: 'block', overflow: 'visible' }}>
-              <defs>
-                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FF4FA3" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#FF4FA3" stopOpacity="0.01" />
-                </linearGradient>
-              </defs>
-              {/* Grid horizontales */}
-              {[0, 25, 50, 75, 100].map(v => {
-                const gy = PAD.top + innerH - (v / 100) * innerH
-                return (
-                  <g key={v}>
-                    <line x1={PAD.left} x2={W - PAD.right} y1={gy} y2={gy} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                    <text x={PAD.left - 6} y={gy + 5} textAnchor="end" fontSize="13" fontWeight="700" fill="rgba(255,255,255,0.4)">{v}</text>
-                  </g>
-                )
-              })}
-              {/* Área rellena */}
-              <path d={areaPath} fill="url(#lineGrad)" />
-              {/* Línea principal */}
-              <polyline points={polyline} fill="none" stroke="#FF4FA3" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-              {/* Puntos y etiquetas de días */}
-              {pts.map((p, i) => {
-                const isToday = i === todayIdx
-                const hasDot = dayScores[i].score > 0 || isToday
-                return (
-                  <g key={p.key}>
-                    {hasDot && (
-                      <circle cx={p.x} cy={p.y} r={isToday ? 5 : 3}
-                        fill={isToday ? '#7C6FFF' : '#FF4FA3'}
-                        stroke={isToday ? '#fff' : 'transparent'} strokeWidth="1.5"
-                        style={{ filter: isToday ? 'drop-shadow(0 0 6px #7C6FFF)' : 'none' }}
-                      />
-                    )}
-                    {/* Número del día */}
-                    <text x={p.x} y={H - 2} textAnchor="middle" fontSize="12"
-                      fill={isToday ? 'var(--accent-purple)' : 'rgba(255,255,255,0.4)'}
-                      fontWeight={isToday ? '800' : '600'}
-                    >{p.n}</text>
-                  </g>
-                )
-              })}
-              {/* Etiqueta hoy */}
-              {todayIdx >= 0 && (
-                <text x={pts[todayIdx].x} y={pts[todayIdx].y - 9} textAnchor="middle" fontSize="9"
-                  fill="var(--accent-purple)" fontWeight="800">
-                  {dayScores[todayIdx].score}%
-                </text>
-              )}
-            </svg>
-          </div>
-        )
-      })()}
+      {/* ── Columna de nombre de hábito fija (tabla aparte) + tabla scrollable de días/stats ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
 
-        <table style={{ borderCollapse: 'separate', borderSpacing: '0 3px', width: 220 + days.length * 54 + 266, tableLayout: 'fixed' }}>
-
-          {/* Definición de anchos de columna — garantiza alineación perfecta */}
-          <colgroup>
-            <col style={{ width: 220 }} />
-            {days.map(d => <col key={d.key} style={{ width: 54 }} />)}
-            <col style={{ width: 64 }} />
-            <col style={{ width: 74 }} />
-            <col style={{ width: 64 }} />
-            <col style={{ width: 64 }} />
-          </colgroup>
-
-          <thead>
-            {/* ── Fila barras de cumplimiento diario ── */}
-            <tr>
-              <th style={{ textAlign: 'left', padding: '0 12px 6px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
-                % DIARIO
-              </th>
-              {dayScores.map(d => {
-                const pct = d.score
-                const maxBarH = 72
-                const barH = pct > 0 ? Math.max(6, Math.round(pct / 100 * maxBarH)) : 4
-                const color = pct >= 80 ? 'var(--accent-teal)' : pct >= 50 ? 'var(--accent-purple)' : pct > 0 ? '#FFD93D' : 'rgba(255,255,255,0.10)'
-                const isToday = d.key === today
-                return (
-                  <th key={d.key} style={{ padding: '0 1px 0', verticalAlign: 'bottom', height: maxBarH + 22 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: maxBarH + 22, gap: 2 }}>
-                      {pct > 0 && (
-                        <div style={{ fontSize: 11, color: isToday ? 'var(--accent-purple)' : pct >= 80 ? 'var(--accent-teal)' : 'var(--text-muted)', fontWeight: 700, lineHeight: 1 }}>
-                          {pct}%
-                        </div>
-                      )}
+        {/* ── Columna fija: nombres de hábito ── */}
+        <div style={{ flexShrink: 0, width: 190, background: 'var(--bg-card-solid)', borderRadius: '8px 0 0 8px' }}>
+          <table style={{ borderCollapse: 'separate', borderSpacing: '0 3px', width: '100%', tableLayout: 'fixed' }}>
+            <colgroup><col style={{ width: 190 }} /></colgroup>
+            <thead>
+              <tr>
+                <th style={{ height: 94, padding: '0 12px 6px', verticalAlign: 'bottom', textAlign: 'left', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
+                  % DIARIO
+                </th>
+              </tr>
+              <tr><th style={{ height: 24 }} /></tr>
+              <tr>
+                <th style={{ height: 44, padding: '4px 12px', textAlign: 'left', fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1, verticalAlign: 'middle' }}>HÁBITO</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupsToShow.map(({ cat, habits: groupHabits }) => {
+                const catColor = cat?.color ?? '#888'
+                return [
+                  /* ── Fila separadora de categoría (nombre) ── */
+                  <tr key={`cat-${cat?.id ?? '__sin__'}`}>
+                    <td style={{ padding: '9px 12px' }}>
                       <div style={{
-                        width: 32, height: barH,
-                        background: isToday ? 'linear-gradient(180deg, var(--accent-purple), var(--accent-teal))' : color,
-                        borderRadius: '4px 4px 0 0',
-                        boxShadow: isToday ? '0 0 12px rgba(124,111,255,0.8)' : pct >= 80 ? `0 0 8px rgba(0,229,184,0.5)` : 'none',
-                        transition: 'height 0.4s ease',
-                      }} />
-                    </div>
-                  </th>
-                )
-              })}
-              <th colSpan={4} />
-            </tr>
+                        height: 32, display: 'flex', alignItems: 'center',
+                        fontSize: 15, fontWeight: 900, color: catColor, letterSpacing: -0.5,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        borderLeft: `4px solid ${catColor}`, paddingLeft: 8,
+                      }}>{cat?.name ?? 'Sin categoría'}</div>
+                    </td>
+                  </tr>,
 
-            {/* ── Fila semanas — pegada a los días ── */}
-            <tr>
-              <th />
-              {weeks.map(w => (
-                <th key={w.week} colSpan={w.days.length} style={{
-                  textAlign: 'center', padding: '6px 2px 2px',
-                  fontSize: 10, fontWeight: 800, letterSpacing: 1.5,
-                  color: 'var(--accent-purple)',
-                  borderBottom: '1px solid rgba(124,111,255,0.3)',
-                }}>
-                  SEM {w.week}
-                </th>
-              ))}
-              <th colSpan={4} />
-            </tr>
-
-            {/* ── Fila días (letra + número) ── */}
-            <tr>
-              <th style={{ padding: 0 }}>
-                <div className="sticky-col" style={{ position: 'sticky', left: 0, zIndex: 3, background: 'var(--bg-card-solid)', textAlign: 'left', padding: '4px 12px', fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: 1 }}>HÁBITO</div>
-              </th>
-              {days.map(d => (
-                <th key={d.key} style={{
-                  textAlign: 'center', padding: '4px 0', fontSize: 11,
-                  color: d.key === today ? 'var(--accent-purple)' : 'var(--text-muted)',
-                  fontWeight: d.key === today ? 900 : 400,
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{d.dow}</div>
-                  <div style={{ fontSize: 16, fontWeight: 800 }}>{d.n}</div>
-                </th>
-              ))}
-              <th style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>META</th>
-              <th style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>CUMPL.</th>
-              <th style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>RACHA</th>
-              <th />
-            </tr>
-          </thead>
-
-          <tbody>
-            {groupsToShow.map(({ cat, habits: groupHabits }) => {
-              const catColor = cat?.color ?? '#888'
-              const catDone  = groupHabits.filter(h => h.completedDays[today]).length
-              const catTotal = groupHabits.length
-              const catPct   = Math.round(catDone / catTotal * 100)
-              const colSpanAll = days.length + 5
-
-              return [
-                /* ── Fila separadora de categoría ── */
-                <tr key={`cat-${cat?.id ?? '__sin__'}`}>
-                  <td colSpan={colSpanAll} style={{ padding: '12px 0 4px' }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '6px 14px 6px 10px',
-                      borderLeft: `4px solid ${catColor}`,
-                      background: `${catColor}0D`,
-                      borderRadius: '0 8px 8px 0',
-                    }}>
-                      <span style={{ fontSize: 22, fontWeight: 900, color: catColor, letterSpacing: -0.5 }}>{cat?.name ?? 'Sin categoría'}</span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{catDone}/{catTotal} hoy</span>
-                      <div style={{ width: 80, background: 'rgba(255,255,255,0.06)', borderRadius: 99, height: 5 }}>
-                        <div style={{ height: '100%', width: `${catPct}%`, background: catColor, borderRadius: 99, transition: 'width 0.4s', boxShadow: catPct === 100 ? `0 0 8px ${catColor}` : 'none' }} />
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: catPct === 100 ? catColor : 'var(--text-muted)' }}>
-                        {catPct === 100 ? '✅ 100%' : `${catPct}%`}
-                      </span>
-                      <button
-                        onClick={() => { setForm({ ...emptyHabit(), category: cat?.id ?? categories[0]?.id ?? '' }); setEditingHabit(null); setHabitModal('add') }}
-                        style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${catColor}55`, borderRadius: 6, cursor: 'pointer', color: catColor, fontSize: 11, fontWeight: 700, padding: '3px 8px' }}
-                      >+ hábito</button>
-                    </div>
-                  </td>
-                </tr>,
-
-                /* ── Filas de hábitos del grupo ── */
-                ...groupHabits.map(h => {
-                  const streak = getStreak(h)
-                  const done   = getHabitMonthDone(h, year, month)
-                  const pct    = getHabitMonthPct(h, year, month)
-                  return (
+                  /* ── Filas de hábitos del grupo (nombre) ── */
+                  ...groupHabits.map(h => (
                     <tr key={h.id} style={{ background: 'rgba(255,255,255,0.025)' }}>
-                      <td style={{ padding: 0 }}>
-                        <div className="sticky-col" style={{ position: 'sticky', left: 0, zIndex: 2, background: 'var(--bg-card-solid)', padding: '9px 12px', borderRadius: '8px 0 0 8px', borderLeft: `3px solid ${h.color}` }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <span style={{ fontSize: 18, flexShrink: 0 }}>{h.icon}</span>
-                            <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
-                              {h.stack && <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 99, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.stack}</span>}
-                            </div>
+                      <td style={{ padding: '4px 12px', borderLeft: `3px solid ${h.color}`, borderRadius: '8px 0 0 8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, height: 40 }}>
+                          <span style={{ fontSize: 18, flexShrink: 0 }}>{h.icon}</span>
+                          <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
+                            {h.stack && <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 99, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.stack}</span>}
                           </div>
                         </div>
                       </td>
-
-                      {(() => {
-                        const catColor = data.categories.find(c => c.id === h.category)?.color ?? h.color
-                        return days.map(d => {
-                          const checked = !!h.completedDays[d.key]
-                          const isToday = d.key === today
-                          return (
-                            <td key={d.key} style={{ textAlign: 'center', padding: '4px 0' }}>
-                              <button onClick={() => toggleHabit(h.id, d.key)} style={{
-                                width: 40, height: 40, borderRadius: 12,
-                                border: checked ? 'none' : isToday ? `2px solid ${catColor}` : '2px solid rgba(255,255,255,0.12)',
-                                cursor: 'pointer',
-                                background: checked ? catColor : isToday ? `${catColor}15` : 'rgba(255,255,255,0.04)',
-                                boxShadow: checked ? `0 0 16px ${catColor}88` : 'none',
-                                transition: 'all 0.15s ease',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                margin: '0 auto',
-                              }}>
-                                {checked && (
-                                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                    <path d="M3 9L7 13L15 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                )}
-                              </button>
-                            </td>
-                          )
-                        })
-                      })()}
-
-
-                      <td style={{ textAlign: 'center' }}>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{done}/{h.goal}</span>
-                      </td>
-
-                      <td style={{ textAlign: 'center', padding: '3px 4px' }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: pct >= 100 ? 'var(--accent-gold)' : pct >= 70 ? 'var(--accent-teal)' : pct >= 40 ? 'var(--accent-purple)' : 'var(--text-muted)', marginBottom: 3 }}>
-                          {pct >= 100 ? '🏆' : `${pct}%`}
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 99, height: 4, margin: '0 auto', width: 44 }}>
-                          <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 100 ? 'var(--accent-gold)' : pct >= 70 ? 'var(--accent-teal)' : 'var(--accent-purple)', borderRadius: 99, transition: 'width 0.4s' }} />
-                        </div>
-                      </td>
-
-                      <td style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: streak >= 7 ? 'var(--accent-gold)' : streak > 0 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
-                        {streak > 0 ? `🔥${streak}` : '—'}
-                      </td>
-
-                      <td style={{ textAlign: 'center', borderRadius: '0 8px 8px 0', paddingRight: 4 }}>
-                        <div style={{ display: 'flex', gap: 0, justifyContent: 'center' }}>
-                          <button onClick={() => openEdit(h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '2px 3px' }}>✏️</button>
-                          <button onClick={() => deleteHabit(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-coral)', fontSize: 16, padding: '2px 3px', opacity: 0.7 }}>✕</button>
-                        </div>
-                      </td>
                     </tr>
+                  )),
+                ]
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Columna scrollable: gráfico + días + stats ── */}
+        <div className="habits-scroll" style={{ overflowX: 'auto', flex: 1, minWidth: 0 }}>
+        {/* ── Gráfico de línea mensual ── */}
+        {(() => {
+          const COL = 54
+          const W = days.length * COL + 266, H = 120, PAD = { top: 24, right: 0, bottom: 30, left: 4 }
+          const innerW = W - PAD.left - PAD.right
+          const innerH = H - PAD.top - PAD.bottom
+          const pts = dayScores.map((d, i) => ({
+            x: PAD.left + (i + 0.5) * COL,
+            y: PAD.top + innerH - (d.score / 100) * innerH,
+            score: d.score,
+            key: d.key,
+            n: d.n,
+          }))
+          const todayIdx = dayScores.findIndex(d => d.key === today)
+          const polyline = pts.map(p => `${p.x},${p.y}`).join(' ')
+          // Área rellena debajo
+          const areaPath = `M${pts[0].x},${PAD.top + innerH} ` +
+            pts.map(p => `L${p.x},${p.y}`).join(' ') +
+            ` L${pts[pts.length - 1].x},${PAD.top + innerH} Z`
+          return (
+            <div className="card" style={{ marginBottom: 6, padding: '14px 0 8px', overflow: 'hidden', width: days.length * 54 + 266 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6, padding: '0 16px' }}>
+                PROGRESO DEL MES — {format(viewMonth, 'MMMM yyyy', { locale: es }).toUpperCase()}
+                <span style={{ marginLeft: 12, color: 'var(--accent-teal)', fontWeight: 700 }}>
+                  {Math.round(dayScores.filter(d => d.score > 0).reduce((a, d) => a + d.score, 0) / (dayScores.filter(d => d.score > 0).length || 1))}% promedio
+                </span>
+              </div>
+              <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ display: 'block', overflow: 'visible' }}>
+                <defs>
+                  <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FF4FA3" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#FF4FA3" stopOpacity="0.01" />
+                  </linearGradient>
+                </defs>
+                {/* Grid horizontales */}
+                {[0, 25, 50, 75, 100].map(v => {
+                  const gy = PAD.top + innerH - (v / 100) * innerH
+                  return (
+                    <line key={v} x1={PAD.left} x2={W - PAD.right} y1={gy} y2={gy} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
                   )
-                }),
-              ]
-            })}
-          </tbody>
-        </table>
+                })}
+                {/* Área rellena */}
+                <path d={areaPath} fill="url(#lineGrad)" />
+                {/* Línea principal */}
+                <polyline points={polyline} fill="none" stroke="#FF4FA3" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                {/* Puntos y etiquetas de días */}
+                {pts.map((p, i) => {
+                  const isToday = i === todayIdx
+                  const hasDot = dayScores[i].score > 0 || isToday
+                  return (
+                    <g key={p.key}>
+                      {hasDot && (
+                        <circle cx={p.x} cy={p.y} r={isToday ? 5 : 3}
+                          fill={isToday ? '#7C6FFF' : '#FF4FA3'}
+                          stroke={isToday ? '#fff' : 'transparent'} strokeWidth="1.5"
+                          style={{ filter: isToday ? 'drop-shadow(0 0 6px #7C6FFF)' : 'none' }}
+                        />
+                      )}
+                      {/* Número del día */}
+                      <text x={p.x} y={H - 2} textAnchor="middle" fontSize="12"
+                        fill={isToday ? 'var(--accent-purple)' : 'rgba(255,255,255,0.4)'}
+                        fontWeight={isToday ? '800' : '600'}
+                      >{p.n}</text>
+                    </g>
+                  )
+                })}
+                {/* Etiqueta hoy */}
+                {todayIdx >= 0 && (
+                  <text x={pts[todayIdx].x} y={pts[todayIdx].y - 9} textAnchor="middle" fontSize="9"
+                    fill="var(--accent-purple)" fontWeight="800">
+                    {dayScores[todayIdx].score}%
+                  </text>
+                )}
+              </svg>
+            </div>
+          )
+        })()}
+
+          <table style={{ borderCollapse: 'separate', borderSpacing: '0 3px', width: days.length * 54 + 266, tableLayout: 'fixed' }}>
+
+            {/* Definición de anchos de columna — garantiza alineación perfecta */}
+            <colgroup>
+              {days.map(d => <col key={d.key} style={{ width: 54 }} />)}
+              <col style={{ width: 64 }} />
+              <col style={{ width: 74 }} />
+              <col style={{ width: 64 }} />
+              <col style={{ width: 64 }} />
+            </colgroup>
+
+            <thead>
+              {/* ── Fila barras de cumplimiento diario ── */}
+              <tr>
+                {dayScores.map(d => {
+                  const pct = d.score
+                  const maxBarH = 72
+                  const barH = pct > 0 ? Math.max(6, Math.round(pct / 100 * maxBarH)) : 4
+                  const color = pct >= 80 ? 'var(--accent-teal)' : pct >= 50 ? 'var(--accent-purple)' : pct > 0 ? '#FFD93D' : 'rgba(255,255,255,0.10)'
+                  const isToday = d.key === today
+                  return (
+                    <th key={d.key} style={{ padding: '0 1px 0', verticalAlign: 'bottom', height: maxBarH + 22 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: maxBarH + 22, gap: 2 }}>
+                        {pct > 0 && (
+                          <div style={{ fontSize: 11, color: isToday ? 'var(--accent-purple)' : pct >= 80 ? 'var(--accent-teal)' : 'var(--text-muted)', fontWeight: 700, lineHeight: 1 }}>
+                            {pct}%
+                          </div>
+                        )}
+                        <div style={{
+                          width: 32, height: barH,
+                          background: isToday ? 'linear-gradient(180deg, var(--accent-purple), var(--accent-teal))' : color,
+                          borderRadius: '4px 4px 0 0',
+                          boxShadow: isToday ? '0 0 12px rgba(124,111,255,0.8)' : pct >= 80 ? `0 0 8px rgba(0,229,184,0.5)` : 'none',
+                          transition: 'height 0.4s ease',
+                        }} />
+                      </div>
+                    </th>
+                  )
+                })}
+                <th colSpan={4} style={{ height: 94 }} />
+              </tr>
+
+              {/* ── Fila semanas — pegada a los días ── */}
+              <tr>
+                {weeks.map(w => (
+                  <th key={w.week} colSpan={w.days.length} style={{
+                    height: 24, textAlign: 'center', padding: '6px 2px 2px',
+                    fontSize: 10, fontWeight: 800, letterSpacing: 1.5,
+                    color: 'var(--accent-purple)',
+                    borderBottom: '1px solid rgba(124,111,255,0.3)',
+                  }}>
+                    SEM {w.week}
+                  </th>
+                ))}
+                <th colSpan={4} style={{ height: 24 }} />
+              </tr>
+
+              {/* ── Fila días (letra + número) ── */}
+              <tr>
+                {days.map(d => (
+                  <th key={d.key} style={{
+                    height: 44, textAlign: 'center', padding: '4px 0', fontSize: 11,
+                    color: d.key === today ? 'var(--accent-purple)' : 'var(--text-muted)',
+                    fontWeight: d.key === today ? 900 : 400,
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{d.dow}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>{d.n}</div>
+                  </th>
+                ))}
+                <th style={{ height: 44, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>META</th>
+                <th style={{ height: 44, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>CUMPL.</th>
+                <th style={{ height: 44, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>RACHA</th>
+                <th style={{ height: 44 }} />
+              </tr>
+            </thead>
+
+            <tbody>
+              {groupsToShow.map(({ cat, habits: groupHabits }) => {
+                const catColor = cat?.color ?? '#888'
+                const catDone  = groupHabits.filter(h => h.completedDays[today]).length
+                const catTotal = groupHabits.length
+                const catPct   = Math.round(catDone / catTotal * 100)
+                const colSpanAll = days.length + 4
+
+                return [
+                  /* ── Fila separadora de categoría ── */
+                  <tr key={`cat-${cat?.id ?? '__sin__'}`}>
+                    <td colSpan={colSpanAll} style={{ padding: '9px 12px' }}>
+                      <div style={{
+                        height: 32, display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '0 14px', background: `${catColor}0D`, borderRadius: 8,
+                      }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{catDone}/{catTotal} hoy</span>
+                        <div style={{ width: 80, background: 'rgba(255,255,255,0.06)', borderRadius: 99, height: 5 }}>
+                          <div style={{ height: '100%', width: `${catPct}%`, background: catColor, borderRadius: 99, transition: 'width 0.4s', boxShadow: catPct === 100 ? `0 0 8px ${catColor}` : 'none' }} />
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: catPct === 100 ? catColor : 'var(--text-muted)' }}>
+                          {catPct === 100 ? '✅ 100%' : `${catPct}%`}
+                        </span>
+                        <button
+                          onClick={() => { setForm({ ...emptyHabit(), category: cat?.id ?? categories[0]?.id ?? '' }); setEditingHabit(null); setHabitModal('add') }}
+                          style={{ marginLeft: 'auto', background: 'none', border: `1px solid ${catColor}55`, borderRadius: 6, cursor: 'pointer', color: catColor, fontSize: 11, fontWeight: 700, padding: '3px 8px' }}
+                        >+ hábito</button>
+                      </div>
+                    </td>
+                  </tr>,
+
+                  /* ── Filas de hábitos del grupo ── */
+                  ...groupHabits.map(h => {
+                    const streak = getStreak(h)
+                    const done   = getHabitMonthDone(h, year, month)
+                    const pct    = getHabitMonthPct(h, year, month)
+                    return (
+                      <tr key={h.id} style={{ background: 'rgba(255,255,255,0.025)' }}>
+                        {(() => {
+                          const catColor = data.categories.find(c => c.id === h.category)?.color ?? h.color
+                          return days.map(d => {
+                            const checked = !!h.completedDays[d.key]
+                            const isToday = d.key === today
+                            return (
+                              <td key={d.key} style={{ textAlign: 'center', padding: '4px 0' }}>
+                                <button onClick={() => toggleHabit(h.id, d.key)} style={{
+                                  width: 40, height: 40, borderRadius: 12,
+                                  border: checked ? 'none' : isToday ? `2px solid ${catColor}` : '2px solid rgba(255,255,255,0.12)',
+                                  cursor: 'pointer',
+                                  background: checked ? catColor : isToday ? `${catColor}15` : 'rgba(255,255,255,0.04)',
+                                  boxShadow: checked ? `0 0 16px ${catColor}88` : 'none',
+                                  transition: 'all 0.15s ease',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  margin: '0 auto',
+                                }}>
+                                  {checked && (
+                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                      <path d="M3 9L7 13L15 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </button>
+                              </td>
+                            )
+                          })
+                        })()}
+
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{done}/{h.goal}</span>
+                        </td>
+
+                        <td style={{ textAlign: 'center', padding: '3px 4px' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: pct >= 100 ? 'var(--accent-gold)' : pct >= 70 ? 'var(--accent-teal)' : pct >= 40 ? 'var(--accent-purple)' : 'var(--text-muted)', marginBottom: 3 }}>
+                            {pct >= 100 ? '🏆' : `${pct}%`}
+                          </div>
+                          <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 99, height: 4, margin: '0 auto', width: 44 }}>
+                            <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 100 ? 'var(--accent-gold)' : pct >= 70 ? 'var(--accent-teal)' : 'var(--accent-purple)', borderRadius: 99, transition: 'width 0.4s' }} />
+                          </div>
+                        </td>
+
+                        <td style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: streak >= 7 ? 'var(--accent-gold)' : streak > 0 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
+                          {streak > 0 ? `🔥${streak}` : '—'}
+                        </td>
+
+                        <td style={{ textAlign: 'center', borderRadius: '0 8px 8px 0', paddingRight: 4 }}>
+                          <div style={{ display: 'flex', gap: 0, justifyContent: 'center' }}>
+                            <button onClick={() => openEdit(h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 16, padding: '2px 3px' }}>✏️</button>
+                            <button onClick={() => deleteHabit(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-coral)', fontSize: 16, padding: '2px 3px', opacity: 0.7 }}>✕</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  }),
+                ]
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* ── Habit Modal (Add / Edit) ── */}
