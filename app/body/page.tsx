@@ -5,6 +5,46 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
+const BODY_LEVELS = [
+  { emoji: '🥚', title: 'El Origen' },
+  { emoji: '🐣', title: 'Primeros Pasos' },
+  { emoji: '🐥', title: 'Ganando Impulso' },
+  { emoji: '🐤', title: 'Tomando Forma' },
+  { emoji: '🦊', title: 'Constante' },
+  { emoji: '🦅', title: 'Volando Alto' },
+  { emoji: '🦸', title: 'Imparable' },
+  { emoji: '🐉', title: 'Modo Bestia' },
+  { emoji: '🏆', title: 'Leyenda' },
+]
+
+const MOTIVATION_START = [
+  'Cada gran transformación comienza con el primer registro. ¡Vamos! 🚀',
+  'Registra tu peso de hoy y empieza a escribir tu evolución. ✍️',
+  'El primer paso ya lo diste al abrir esta página. Sigue avanzando. 🔥',
+]
+const MOTIVATION_LOSING = [
+  '¡Vas por buen camino! Cada kilo menos es un hábito que se consolida. 💪',
+  'La constancia le está ganando a la báscula. ¡Sigue así! 🔥',
+  'Tu cuerpo está respondiendo a tu disciplina. No pares ahora. 🚀',
+  'Pequeños pasos diarios = grandes cambios. Vas excelente. ✨',
+  'El esfuerzo de hoy es el resultado de mañana. ¡Sigue! 🌟',
+]
+const MOTIVATION_GAINING = [
+  'Una subida no define tu progreso. Ajusta y sigue adelante. 💛',
+  'El cuerpo fluctúa, lo importante es la tendencia general. Confía en el proceso. 🌱',
+  'Hoy es un buen día para retomar el enfoque. Tú puedes. 💪',
+  'No te castigues por un número. Vuelve a tus hábitos y verás resultados. 🔄',
+]
+const MOTIVATION_STABLE = [
+  'Mantenerte estable también es un logro. La consistencia es la clave. 🧘',
+  'Estás en zona de control. Sigue registrando, los resultados llegan. 📊',
+  'La estabilidad es la base de cualquier gran cambio. Vas bien. ⚖️',
+]
+const MOTIVATION_GOAL_REACHED = [
+  '🏆 ¡Meta alcanzada! Eres la prueba de que la constancia funciona.',
+  '🎉 ¡Lo lograste! Hora de definir tu próximo objetivo y seguir creciendo.',
+]
+
 export default function BodyPage() {
   const { data, addWeight, deleteWeight } = useAppData()
   const today = getTodayKey()
@@ -90,6 +130,18 @@ export default function BodyPage() {
     avg: +(sorted.reduce((s, w) => s + w.weight, 0) / sorted.length).toFixed(1),
   } : null
 
+  // ── Evolución / motivación ──
+  const evoPct = goalPct !== null ? goalPct : Math.min(100, sorted.length * 5)
+  const evoLevel = Math.min(BODY_LEVELS.length - 1, Math.floor(evoPct / (100 / (BODY_LEVELS.length - 1))))
+  const evo = BODY_LEVELS[evoLevel]
+
+  const motivationPool = goalPct !== null && goalPct >= 100 ? MOTIVATION_GOAL_REACHED
+    : sorted.length < 2 ? MOTIVATION_START
+    : isLosing ? MOTIVATION_LOSING
+    : totalChange !== null && totalChange > 0 ? MOTIVATION_GAINING
+    : MOTIVATION_STABLE
+  const motivationPhrase = motivationPool[new Date().getDate() % motivationPool.length]
+
   return (
     <div style={{ padding: '32px 40px', maxWidth: 960 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -118,6 +170,28 @@ export default function BodyPage() {
               </button>
             </>
           )}
+        </div>
+      </div>
+
+      {/* ── Motivación / Evolución ── */}
+      <div className="card" style={{ marginBottom: 22, background: 'linear-gradient(135deg, rgba(124,111,255,0.08), rgba(0,229,184,0.05))', borderColor: 'rgba(124,111,255,0.25)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 56, lineHeight: 1, filter: 'drop-shadow(0 0 12px rgba(124,111,255,0.4))' }}>{evo.emoji}</div>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
+              <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1, color: 'var(--accent-purple)' }}>NIVEL {evoLevel + 1} · {evo.title}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{evoPct}%{goalPct !== null ? ' hacia tu meta' : ' de progreso'}</span>
+            </div>
+            <div className="prog-track" style={{ height: 8, marginBottom: 10 }}>
+              <div className="prog-fill" style={{
+                width: `${evoPct}%`,
+                background: evoPct >= 100 ? 'var(--accent-gold)' : 'linear-gradient(90deg, var(--accent-purple), var(--accent-teal))',
+                boxShadow: evoPct >= 100 ? '0 0 14px var(--accent-gold)' : '0 0 8px rgba(124,111,255,0.4)',
+                transition: 'width 0.6s ease',
+              }} />
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{motivationPhrase}</div>
+          </div>
         </div>
       </div>
 
