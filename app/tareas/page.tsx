@@ -31,7 +31,7 @@ const RECURRING: { id: 'none' | 'daily' | 'weekly' | 'monthly'; label: string }[
 const emptyList = (): Omit<TaskList, 'id'> => ({ name: '', color: COLORS[0], icon: ICONS[0] })
 
 const emptyTask = (listId: string): Omit<Task, 'id' | 'createdAt'> => ({
-  title: '', notes: '', listId, dueDate: undefined, priority: 0, completed: false, subtasks: [], recurring: 'none',
+  title: '', notes: '', listId, dueDate: getTodayKey(), priority: 0, completed: false, subtasks: [], recurring: 'none',
 })
 
 function dueLabel(dateStr?: string) {
@@ -138,8 +138,7 @@ export default function TareasPage() {
   const addQuick = () => {
     if (!quickTitle.trim()) return
     const listId = (typeof view === 'string' && data.taskLists.some(l => l.id === view)) ? view : (data.taskLists[0]?.id ?? 't1')
-    const dueDate = view === 'today' ? todayStr : undefined
-    addTask({ id: Date.now().toString(), createdAt: new Date().toISOString(), title: quickTitle.trim(), notes: '', listId, dueDate, priority: 0, completed: false, subtasks: [], recurring: 'none' })
+    addTask({ id: Date.now().toString(), createdAt: new Date().toISOString(), title: quickTitle.trim(), notes: '', listId, dueDate: todayStr, priority: 0, completed: false, subtasks: [], recurring: 'none' })
     setQuickTitle('')
   }
 
@@ -156,8 +155,8 @@ export default function TareasPage() {
 
   // ── Plan my day ──
   const startPlanMyDay = () => {
-    if (todayTasks.length === 0) return
-    setPlanQueue(sortTasks(todayTasks))
+    if (visibleTasks.length === 0) return
+    setPlanQueue(visibleTasks)
     setPlanIndex(0)
   }
   const planAdvance = () => {
@@ -262,7 +261,7 @@ export default function TareasPage() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div className="section-label" style={{ marginBottom: 0 }}>{title}</div>
-            {view === 'today' && todayTasks.length > 0 && (
+            {(view === 'today' || view === 'upcoming' || view === 'all') && visibleTasks.length > 0 && (
               <button className="btn-primary" onClick={startPlanMyDay} style={{ background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-teal))', fontSize: 13 }}>
                 ▶ Plan my day
               </button>
