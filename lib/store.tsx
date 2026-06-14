@@ -94,6 +94,9 @@ export interface Task {
   createdAt: string
   subtasks: SubTask[]
   recurring?: 'none' | 'daily' | 'weekly' | 'monthly'
+  recurringDays?: number[] // para 'weekly': días de la semana (0=domingo..6=sábado)
+  startTime?: string // HH:MM
+  endTime?: string   // HH:MM
 }
 
 export interface TaskList {

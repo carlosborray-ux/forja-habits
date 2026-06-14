@@ -32,7 +32,13 @@ const emptyList = (): Omit<TaskList, 'id'> => ({ name: '', color: COLORS[0], ico
 
 const emptyTask = (listId: string): Omit<Task, 'id' | 'createdAt'> => ({
   title: '', notes: '', listId, dueDate: getTodayKey(), priority: 0, completed: false, subtasks: [], recurring: 'none',
+  recurringDays: [], startTime: undefined, endTime: undefined,
 })
+
+const WEEKDAYS = [
+  { id: 1, label: 'L' }, { id: 2, label: 'M' }, { id: 3, label: 'X' }, { id: 4, label: 'J' },
+  { id: 5, label: 'V' }, { id: 6, label: 'S' }, { id: 0, label: 'D' },
+]
 
 function dueLabel(dateStr?: string) {
   if (!dateStr) return null
@@ -43,10 +49,51 @@ function dueLabel(dateStr?: string) {
   return { text: format(d, 'd MMM', { locale: es }), color: 'var(--text-secondary)' }
 }
 
-function nextDate(dateStr: string, recurring: string): string {
+function durationLabel(start?: string, end?: string) {
+  if (!start || !end) return null
+  const [sh, sm] = start.split(':').map(Number)
+  const [eh, em] = end.split(':').map(Number)
+  let mins = (eh * 60 + em) - (sh * 60 + sm)
+  if (mins < 0) mins += 24 * 60
+  const h = Math.floor(mins / 60), m = mins % 60
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`
+  return `${m}m`
+}
+
+function gcalLink(t: Task) {
+  if (!t.dueDate) return null
+  const dateCompact = t.dueDate.replace(/-/g, '')
+  let dates: string
+  if (t.startTime && t.endTime) {
+    dates = `${dateCompact}T${t.startTime.replace(':', '')}00/${dateCompact}T${t.endTime.replace(':', '')}00`
+  } else {
+    const endCompact = format(addDays(new Date(t.dueDate + 'T12:00:00'), 1), 'yyyyMMdd')
+    dates = `${dateCompact}/${endCompact}`
+  }
+  const params = new URLSearchParams({ action: 'TEMPLATE', text: t.title, dates, details: t.notes ?? '' })
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
+function nextDate(dateStr: string, recurring: string, recurringDays?: number[]): string {
   const d = new Date(dateStr + 'T12:00:00')
-  if (recurring === 'daily') return format(addDays(d, 1), 'yyyy-MM-dd')
-  if (recurring === 'weekly') return format(addDays(d, 7), 'yyyy-MM-dd')
+  if (recurring === 'daily') {
+    if (recurringDays && recurringDays.length > 0) {
+      for (let i = 1; i <= 7; i++) {
+        const nd = addDays(d, i)
+        if (recurringDays.includes(nd.getDay())) return format(nd, 'yyyy-MM-dd')
+      }
+    }
+    return format(addDays(d, 1), 'yyyy-MM-dd')
+  }
+  if (recurring === 'weekly') {
+    if (recurringDays && recurringDays.length > 0) {
+      for (let i = 1; i <= 7; i++) {
+        const nd = addDays(d, i)
+        if (recurringDays.includes(nd.getDay())) return format(nd, 'yyyy-MM-dd')
+      }
+    }
+    return format(addDays(d, 7), 'yyyy-MM-dd')
+  }
   if (recurring === 'monthly') {
     const nd = new Date(d)
     nd.setMonth(nd.getMonth() + 1)
@@ -93,10 +140,11 @@ export default function TareasPage() {
 
   const today = new Date()
   const todayStr = getTodayKey()
-  const in7 = format(addDays(today, 7), 'yyyy-MM-dd')
+  const in14 = format(addDays(today, 14), 'yyyy-MM-dd')
 
   const todayTasks    = pending.filter(t => t.dueDate && (t.dueDate <= todayStr))
-  const upcomingTasks = pending.filter(t => t.dueDate && t.dueDate > todayStr && t.dueDate <= in7)
+  const upcomingTasks = pending.filter(t => t.dueDate && t.dueDate >= todayStr && t.dueDate <= in14)
+  const somedayTasks  = pending.filter(t => !t.dueDate)
   const completedTasks = data.tasks.filter(t => t.completed).sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
 
   const sortTasks = (arr: Task[]) => [...arr].sort((a, b) => {
@@ -111,7 +159,8 @@ export default function TareasPage() {
   let title = ''
   let visibleTasks: Task[] = []
   if (view === 'today') { title = 'HOY'; visibleTasks = sortTasks(todayTasks) }
-  else if (view === 'upcoming') { title = 'PRÓXIMOS 7 DÍAS'; visibleTasks = sortTasks(upcomingTasks) }
+  else if (view === 'upcoming') { title = 'PRÓXIMOS DÍAS'; visibleTasks = sortTasks(upcomingTasks) }
+  else if (view === 'someday') { title = 'ALGÚN DÍA'; visibleTasks = sortTasks(somedayTasks) }
   else if (view === 'all') { title = 'TODAS LAS TAREAS'; visibleTasks = sortTasks(pending) }
   else if (view === 'completed') { title = 'COMPLETADAS'; visibleTasks = completedTasks }
   else { title = (listFor(view)?.icon ?? '') + ' ' + (listFor(view)?.name ?? '').toUpperCase(); visibleTasks = sortTasks(pending.filter(t => t.listId === view)) }
@@ -125,7 +174,7 @@ export default function TareasPage() {
   }
   const openEditTask = (t: Task) => {
     setEditingTask(t)
-    setForm({ title: t.title, notes: t.notes ?? '', listId: t.listId, dueDate: t.dueDate, priority: t.priority, completed: t.completed, subtasks: t.subtasks, recurring: t.recurring ?? 'none' })
+    setForm({ title: t.title, notes: t.notes ?? '', listId: t.listId, dueDate: t.dueDate, priority: t.priority, completed: t.completed, subtasks: t.subtasks, recurring: t.recurring ?? 'none', recurringDays: t.recurringDays ?? [], startTime: t.startTime, endTime: t.endTime })
     setNewSubtask('')
     setTaskModal(true)
   }
@@ -145,7 +194,7 @@ export default function TareasPage() {
   const handleToggle = (t: Task) => {
     if (!t.completed && t.recurring && t.recurring !== 'none' && t.dueDate) {
       // Tarea recurrente: en vez de completarla, la reprograma a la próxima fecha
-      updateTask({ ...t, dueDate: nextDate(t.dueDate, t.recurring) })
+      updateTask({ ...t, dueDate: nextDate(t.dueDate, t.recurring, t.recurringDays) })
     } else {
       toggleTask(t.id)
     }
@@ -183,6 +232,105 @@ export default function TareasPage() {
   const removeSubtaskFromForm = (id: string) => setForm(p => ({ ...p, subtasks: p.subtasks.filter(s => s.id !== id) }))
   const toggleSubtaskInForm = (id: string) => setForm(p => ({ ...p, subtasks: p.subtasks.map(s => s.id === id ? { ...s, done: !s.done } : s) }))
 
+  // ── Render de una tarjeta de tarea ──
+  const renderTask = (t: Task) => {
+    const list = listFor(t.listId)
+    const due = dueLabel(t.dueDate)
+    const isExpanded = expanded[t.id] !== false
+    const subDone = t.subtasks.filter(s => s.done).length
+    const duration = durationLabel(t.startTime, t.endTime)
+    const gcal = gcalLink(t)
+    return (
+      <div key={t.id} className="card" style={{ padding: '12px 14px', borderLeft: `3px solid ${list?.color ?? '#888'}` }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <button onClick={() => handleToggle(t)} style={{
+            width: 20, height: 20, borderRadius: '50%', border: `2px solid ${priorityColor(t.priority)}`,
+            background: t.completed ? priorityColor(t.priority) : 'transparent', cursor: 'pointer', flexShrink: 0, marginTop: 2,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'white', padding: 0,
+          }}>{t.completed ? '✓' : ''}</button>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: 14, fontWeight: 600,
+                textDecoration: t.completed ? 'line-through' : 'none',
+                color: t.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+              }}>{t.title}</span>
+              {t.recurring && t.recurring !== 'none' && <span title="Recurrente" style={{ fontSize: 12 }}>🔁</span>}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+              {view !== t.listId && (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {list?.icon} {list?.name}
+                </span>
+              )}
+              {due && <span style={{ fontSize: 11, fontWeight: 700, color: due.color }}>📅 {due.text}</span>}
+              {(t.startTime || t.endTime) && (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  🕐 {t.startTime ?? '?'}{t.endTime ? ` – ${t.endTime}` : ''}{duration ? ` (${duration})` : ''}
+                </span>
+              )}
+              {gcal && (
+                <a href={gcal} target="_blank" rel="noopener noreferrer" title="Agregar a Google Calendar" style={{ fontSize: 11, color: 'var(--accent-blue)', textDecoration: 'none' }}>
+                  🗓️ Calendar
+                </a>
+              )}
+              {t.priority > 0 && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: priorityColor(t.priority) }}>
+                  {PRIORITIES.find(p => p.id === t.priority)?.label}
+                </span>
+              )}
+              {t.subtasks.length > 0 && (
+                <button onClick={() => setExpanded(p => ({ ...p, [t.id]: !p[t.id] }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: 0 }}>
+                  ☑ {subDone}/{t.subtasks.length} {isExpanded ? '▲' : '▼'}
+                </button>
+              )}
+            </div>
+            {t.notes && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontStyle: 'italic' }}>{t.notes}</div>}
+            {isExpanded && t.subtasks.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+                {t.subtasks.map(s => (
+                  <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: s.done ? 'var(--text-muted)' : 'var(--text-secondary)', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={s.done} onChange={() => toggleSubtask(t.id, s.id)} />
+                    <span style={{ textDecoration: s.done ? 'line-through' : 'none' }}>{s.title}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            {!t.completed && (
+              <>
+                <button onClick={() => postpone(t, format(addDays(new Date(), 1), 'yyyy-MM-dd'))} title="Posponer a mañana" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 99, cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: '4px 8px' }}>→ Mañana</button>
+                <button onClick={() => postpone(t, format(addDays(new Date(), 7), 'yyyy-MM-dd'))} title="Posponer 1 semana" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 99, cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: '4px 8px' }}>+1 sem</button>
+              </>
+            )}
+            <button onClick={() => openEditTask(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--text-secondary)', padding: '2px 4px' }}>✏️</button>
+            <button onClick={() => deleteTask(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--accent-coral)', padding: '2px 4px', opacity: 0.7 }}>✕</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Agrupación por día para vista "Próximos" ──
+  const upcomingGroups = () => {
+    const groups: { label: string; tasks: Task[] }[] = []
+    for (let i = 0; i <= 14; i++) {
+      const d = addDays(today, i)
+      const k = format(d, 'yyyy-MM-dd')
+      const dayTasks = sortTasks(pending.filter(t => t.dueDate === k))
+      if (dayTasks.length === 0) continue
+      let label: string
+      if (i === 0) label = 'Hoy'
+      else if (i === 1) label = 'Mañana'
+      else label = format(d, "EEEE d 'de' MMMM", { locale: es })
+      groups.push({ label: label.charAt(0).toUpperCase() + label.slice(1), tasks: dayTasks })
+    }
+    return groups
+  }
+
   const openAddList = () => { setEditingList(null); setListForm(emptyList()); setListModal(true) }
   const openEditList = (l: TaskList) => { setEditingList(l); setListForm({ name: l.name, color: l.color, icon: l.icon }); setListModal(true) }
   const saveList = () => {
@@ -217,6 +365,7 @@ export default function TareasPage() {
             {[
               { id: 'today', icon: '📆', label: 'Hoy', count: todayTasks.length },
               { id: 'upcoming', icon: '🗓️', label: 'Próximos', count: upcomingTasks.length },
+              { id: 'someday', icon: '🌫️', label: 'Algún día', count: somedayTasks.length },
               { id: 'all', icon: '📋', label: 'Todas', count: pending.length },
               { id: 'calendar', icon: '📅', label: 'Calendario', count: 0 },
               { id: 'completed', icon: '✅', label: 'Completadas', count: completedTasks.length },
@@ -332,76 +481,20 @@ export default function TareasPage() {
             <div className="card" style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>
               {view === 'completed' ? 'Aún no completas tareas' : '¡Nada pendiente por aquí! ✨'}
             </div>
+          ) : view === 'upcoming' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {upcomingGroups().map(g => (
+                <div key={g.label}>
+                  <div className="section-label" style={{ marginBottom: 8 }}>{g.label}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {g.tasks.map(renderTask)}
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {visibleTasks.map(t => {
-                const list = listFor(t.listId)
-                const due = dueLabel(t.dueDate)
-                const isExpanded = !!expanded[t.id]
-                const subDone = t.subtasks.filter(s => s.done).length
-                return (
-                  <div key={t.id} className="card" style={{ padding: '12px 14px', borderLeft: `3px solid ${list?.color ?? '#888'}` }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                      <button onClick={() => handleToggle(t)} style={{
-                        width: 20, height: 20, borderRadius: '50%', border: `2px solid ${priorityColor(t.priority)}`,
-                        background: t.completed ? priorityColor(t.priority) : 'transparent', cursor: 'pointer', flexShrink: 0, marginTop: 2,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'white', padding: 0,
-                      }}>{t.completed ? '✓' : ''}</button>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: 14, fontWeight: 600,
-                            textDecoration: t.completed ? 'line-through' : 'none',
-                            color: t.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                          }}>{t.title}</span>
-                          {t.recurring && t.recurring !== 'none' && <span title="Recurrente" style={{ fontSize: 12 }}>🔁</span>}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
-                          {view !== t.listId && (
-                            <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                              {list?.icon} {list?.name}
-                            </span>
-                          )}
-                          {due && <span style={{ fontSize: 11, fontWeight: 700, color: due.color }}>📅 {due.text}</span>}
-                          {t.priority > 0 && (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: priorityColor(t.priority) }}>
-                              {PRIORITIES.find(p => p.id === t.priority)?.label}
-                            </span>
-                          )}
-                          {t.subtasks.length > 0 && (
-                            <button onClick={() => setExpanded(p => ({ ...p, [t.id]: !p[t.id] }))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: 0 }}>
-                              ☑ {subDone}/{t.subtasks.length} {isExpanded ? '▲' : '▼'}
-                            </button>
-                          )}
-                        </div>
-                        {t.notes && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontStyle: 'italic' }}>{t.notes}</div>}
-                        {isExpanded && t.subtasks.length > 0 && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
-                            {t.subtasks.map(s => (
-                              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: s.done ? 'var(--text-muted)' : 'var(--text-secondary)', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={s.done} onChange={() => toggleSubtask(t.id, s.id)} />
-                                <span style={{ textDecoration: s.done ? 'line-through' : 'none' }}>{s.title}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                        {!t.completed && (
-                          <>
-                            <button onClick={() => postpone(t, format(addDays(new Date(), 1), 'yyyy-MM-dd'))} title="Posponer a mañana" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 99, cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: '4px 8px' }}>→ Mañana</button>
-                            <button onClick={() => postpone(t, format(addDays(new Date(), 7), 'yyyy-MM-dd'))} title="Posponer 1 semana" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 99, cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)', padding: '4px 8px' }}>+1 sem</button>
-                          </>
-                        )}
-                        <button onClick={() => openEditTask(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--text-secondary)', padding: '2px 4px' }}>✏️</button>
-                        <button onClick={() => deleteTask(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: 'var(--accent-coral)', padding: '2px 4px', opacity: 0.7 }}>✕</button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+              {visibleTasks.map(renderTask)}
             </div>
           )}
         </div>
@@ -534,6 +627,42 @@ export default function TareasPage() {
                   <select value={form.recurring} onChange={e => setForm(p => ({ ...p, recurring: e.target.value as Task['recurring'] }))} className="input-glass">
                     {RECURRING.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                   </select>
+                </div>
+              </div>
+
+              {/* Días de repetición (para diario/semanal) */}
+              {(form.recurring === 'daily' || form.recurring === 'weekly') && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
+                    {form.recurring === 'daily' ? 'REPETIR SOLO ESTOS DÍAS (vacío = todos)' : 'REPETIR ESTOS DÍAS DE LA SEMANA'}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {WEEKDAYS.map(w => {
+                      const active = (form.recurringDays ?? []).includes(w.id)
+                      return (
+                        <button key={w.id} type="button" onClick={() => setForm(p => {
+                          const cur = p.recurringDays ?? []
+                          return { ...p, recurringDays: cur.includes(w.id) ? cur.filter(x => x !== w.id) : [...cur, w.id] }
+                        })} style={{
+                          flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                          background: active ? 'var(--accent-purple)' : 'rgba(255,255,255,0.06)',
+                          color: active ? 'white' : 'var(--text-secondary)',
+                        }}>{w.label}</button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Horario */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>HORA INICIO (opcional)</div>
+                  <input type="time" value={form.startTime ?? ''} onChange={e => setForm(p => ({ ...p, startTime: e.target.value || undefined }))} className="input-glass" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>HORA FIN (opcional)</div>
+                  <input type="time" value={form.endTime ?? ''} onChange={e => setForm(p => ({ ...p, endTime: e.target.value || undefined }))} className="input-glass" />
                 </div>
               </div>
 

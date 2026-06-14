@@ -36,6 +36,13 @@ function toMin(t: string) {
 function fromMin(m: number) {
   return `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`
 }
+function agendaGcalLink(form: { title: string; time: string; endTime: string; date: string }) {
+  const dateCompact = form.date.replace(/-/g, '')
+  const dates = `${dateCompact}T${form.time.replace(':', '')}00/${dateCompact}T${(form.endTime || form.time).replace(':', '')}00`
+  const params = new URLSearchParams({ action: 'TEMPLATE', text: form.title, dates })
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
 function blockTop(time: string) {
   return Math.max(0, (toMin(time) - START_H * 60) / 60 * HOUR_H)
 }
@@ -296,11 +303,18 @@ export default function AgendaPage() {
           <div className="card" style={{ width: 440, padding: 32 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontSize: 20, fontWeight: 900, margin: 0 }}>{editId ? '✏️ Editar' : '+ Nueva actividad'}</h2>
-              {editId && (
-                <button onClick={() => { deleteAgendaBlock(editId); setModal(null) }} style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: 7, padding: '5px 10px', color: '#ff5050', cursor: 'pointer', fontSize: 13 }}>
-                  🗑 Eliminar
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {form.title.trim() && (
+                  <a href={agendaGcalLink(form)} target="_blank" rel="noopener noreferrer" title="Agregar a Google Calendar" style={{ background: 'rgba(79,195,247,0.1)', border: '1px solid rgba(79,195,247,0.3)', borderRadius: 7, padding: '5px 10px', color: 'var(--accent-blue)', fontSize: 13, textDecoration: 'none' }}>
+                    🗓️ Calendar
+                  </a>
+                )}
+                {editId && (
+                  <button onClick={() => { deleteAgendaBlock(editId); setModal(null) }} style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: 7, padding: '5px 10px', color: '#ff5050', cursor: 'pointer', fontSize: 13 }}>
+                    🗑 Eliminar
+                  </button>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
