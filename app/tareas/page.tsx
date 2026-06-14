@@ -591,9 +591,19 @@ export default function TareasPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setTaskModal(false) }}>
           <div className="card" style={{ width: 460, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 20 }}>
-              {editingTask ? '✏️ Editar tarea' : '+ Nueva tarea'}
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>
+                {editingTask ? '✏️ Editar tarea' : '+ Nueva tarea'}
+              </h2>
+              {form.title.trim() && form.dueDate && (() => {
+                const link = gcalLink({ ...form, id: '', completed: false, createdAt: '' } as Task)
+                return link ? (
+                  <a href={link} target="_blank" rel="noopener noreferrer" title="Agregar a Google Calendar" style={{ background: 'rgba(79,195,247,0.1)', border: '1px solid rgba(79,195,247,0.3)', borderRadius: 7, padding: '5px 10px', color: 'var(--accent-blue)', fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    🗓️ Calendar
+                  </a>
+                ) : null
+              })()}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
               {/* Título */}
