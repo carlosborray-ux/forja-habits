@@ -3,6 +3,7 @@ import { useState, useRef } from 'react'
 import { useAppData, AgendaBlock, getDateKey } from '@/lib/store'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
+import TimeSelect from '@/components/TimeSelect'
 
 // ── Config ──────────────────────────────────────────────
 const HOUR_H   = 72   // px per hour
@@ -121,11 +122,20 @@ export default function AgendaPage() {
   const saveModal = () => {
     if (!form.title.trim() || !modal) return
     const { date, recurring, recurringDays, ...rest } = form
+    const startDate = new Date(date + 'T12:00:00')
+    const days = recurringDays.length > 0 ? recurringDays : (recurring === 'daily' ? [0,1,2,3,4,5,6] : [startDate.getDay()])
     if (editId) {
       updateAgendaBlock({ id: editId, ...rest, done: false, date })
+      if (recurring !== 'none') {
+        for (let i = 1; i < 84; i++) {
+          const d = addDays(startDate, i)
+          if (days.includes(d.getDay())) {
+            const k = format(d, 'yyyy-MM-dd')
+            addAgendaBlock({ id: `${k}-${rest.time}-${Math.random().toString(36).slice(2)}`, ...rest, done: false, date: k })
+          }
+        }
+      }
     } else if (recurring !== 'none') {
-      const startDate = new Date(date + 'T12:00:00')
-      const days = recurringDays.length > 0 ? recurringDays : (recurring === 'daily' ? [0,1,2,3,4,5,6] : [startDate.getDay()])
       for (let i = 0; i < 84; i++) {
         const d = addDays(startDate, i)
         if (days.includes(d.getDay())) {
@@ -355,29 +365,27 @@ export default function AgendaPage() {
               <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>INICIO</div>
-                  <input type="time" step={900} value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
+                  <TimeSelect value={form.time} onChange={v => setForm(p => ({ ...p, time: v }))}
                     style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text-primary)', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>FIN</div>
-                  <input type="time" step={900} value={form.endTime} onChange={e => setForm(p => ({ ...p, endTime: e.target.value }))}
+                  <TimeSelect value={form.endTime} onChange={v => setForm(p => ({ ...p, endTime: v }))}
                     style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text-primary)', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               </div>
 
-              {/* Repetición (solo al crear) */}
-              {!editId && (
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>REPETICIÓN</div>
-                  <select value={form.recurring} onChange={e => setForm(p => ({ ...p, recurring: e.target.value as 'none' | 'daily' | 'weekly', recurringDays: [] }))} className="input-glass">
-                    <option value="none">No se repite</option>
-                    <option value="daily">Diario</option>
-                    <option value="weekly">Semanal</option>
-                  </select>
-                </div>
-              )}
+              {/* Repetición */}
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>REPETICIÓN</div>
+                <select value={form.recurring} onChange={e => setForm(p => ({ ...p, recurring: e.target.value as 'none' | 'daily' | 'weekly', recurringDays: [] }))} className="input-glass">
+                  <option value="none">No se repite</option>
+                  <option value="daily">Diario</option>
+                  <option value="weekly">Semanal</option>
+                </select>
+              </div>
 
-              {!editId && (form.recurring === 'daily' || form.recurring === 'weekly') && (
+              {(form.recurring === 'daily' || form.recurring === 'weekly') && (
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: 1 }}>
                     {form.recurring === 'daily' ? 'REPETIR SOLO ESTOS DÍAS (vacío = todos)' : 'REPETIR ESTOS DÍAS (vacío = mismo día de la semana)'}
@@ -397,7 +405,7 @@ export default function AgendaPage() {
                     })}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
-                    Se crearán las actividades de los próximos ~12 semanas en los días seleccionados.
+                    Se crearán las próximas ~12 semanas de actividades en los días seleccionados, a partir de {editId ? 'la siguiente ocurrencia' : 'esta fecha'}.
                   </div>
                 </div>
               )}
