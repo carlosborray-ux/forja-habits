@@ -36,6 +36,11 @@ function toMin(t: string) {
 function fromMin(m: number) {
   return `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`
 }
+const WEEKDAYS = [
+  { id: 1, label: 'L' }, { id: 2, label: 'M' }, { id: 3, label: 'X' }, { id: 4, label: 'J' },
+  { id: 5, label: 'V' }, { id: 6, label: 'S' }, { id: 0, label: 'D' },
+]
+
 function agendaGcalLink(form: { title: string; time: string; endTime: string; date: string }) {
   const dateCompact = form.date.replace(/-/g, '')
   const dates = `${dateCompact}T${form.time.replace(':', '')}00/${dateCompact}T${(form.endTime || form.time).replace(':', '')}00`
@@ -82,7 +87,10 @@ export default function AgendaPage() {
   // Modal state
   const [modal, setModal] = useState<{ date: string; time: string } | null>(null)
   const [editId, setEditId]   = useState<string | null>(null)
-  const [form, setForm] = useState({ title: '', time: '09:00', endTime: '10:00', category: 'work' as AgendaBlock['category'], date: '' })
+  const [form, setForm] = useState({
+    title: '', time: '09:00', endTime: '10:00', category: 'work' as AgendaBlock['category'], date: '',
+    recurring: 'none' as 'none' | 'daily' | 'weekly', recurringDays: [] as number[],
+  })
 
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -100,21 +108,31 @@ export default function AgendaPage() {
     const t = fromMin(Math.min(snappedMin, (END_H - 1) * 60))
     const e = fromMin(Math.min(snappedMin + 60, END_H * 60))
     setEditId(null)
-    setForm({ title: '', time: t, endTime: e, category: 'work', date })
+    setForm({ title: '', time: t, endTime: e, category: 'work', date, recurring: 'none', recurringDays: [] })
     setModal({ date, time: t })
   }
 
   const openEdit = (b: AgendaBlock) => {
     setEditId(b.id)
-    setForm({ title: b.title, time: b.time, endTime: b.endTime ?? fromMin(toMin(b.time) + 60), category: b.category, date: b.date })
+    setForm({ title: b.title, time: b.time, endTime: b.endTime ?? fromMin(toMin(b.time) + 60), category: b.category, date: b.date, recurring: 'none', recurringDays: [] })
     setModal({ date: b.date, time: b.time })
   }
 
   const saveModal = () => {
     if (!form.title.trim() || !modal) return
-    const { date, ...rest } = form
+    const { date, recurring, recurringDays, ...rest } = form
     if (editId) {
       updateAgendaBlock({ id: editId, ...rest, done: false, date })
+    } else if (recurring !== 'none') {
+      const startDate = new Date(date + 'T12:00:00')
+      const days = recurringDays.length > 0 ? recurringDays : (recurring === 'daily' ? [0,1,2,3,4,5,6] : [startDate.getDay()])
+      for (let i = 0; i < 84; i++) {
+        const d = addDays(startDate, i)
+        if (days.includes(d.getDay())) {
+          const k = format(d, 'yyyy-MM-dd')
+          addAgendaBlock({ id: `${k}-${rest.time}-${Math.random().toString(36).slice(2)}`, ...rest, done: false, date: k })
+        }
+      }
     } else {
       addAgendaBlock({ id: `${date}-${Date.now()}`, ...rest, done: false, date })
     }
@@ -337,15 +355,52 @@ export default function AgendaPage() {
               <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>INICIO</div>
-                  <input type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
+                  <input type="time" step={900} value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
                     style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text-primary)', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>FIN</div>
-                  <input type="time" value={form.endTime} onChange={e => setForm(p => ({ ...p, endTime: e.target.value }))}
+                  <input type="time" step={900} value={form.endTime} onChange={e => setForm(p => ({ ...p, endTime: e.target.value }))}
                     style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text-primary)', fontSize: 15, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               </div>
+
+              {/* Repetición (solo al crear) */}
+              {!editId && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, letterSpacing: 1 }}>REPETICIÓN</div>
+                  <select value={form.recurring} onChange={e => setForm(p => ({ ...p, recurring: e.target.value as 'none' | 'daily' | 'weekly', recurringDays: [] }))} className="input-glass">
+                    <option value="none">No se repite</option>
+                    <option value="daily">Diario</option>
+                    <option value="weekly">Semanal</option>
+                  </select>
+                </div>
+              )}
+
+              {!editId && (form.recurring === 'daily' || form.recurring === 'weekly') && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: 1 }}>
+                    {form.recurring === 'daily' ? 'REPETIR SOLO ESTOS DÍAS (vacío = todos)' : 'REPETIR ESTOS DÍAS (vacío = mismo día de la semana)'}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {WEEKDAYS.map(w => {
+                      const active = form.recurringDays.includes(w.id)
+                      return (
+                        <button key={w.id} type="button" onClick={() => setForm(p => ({
+                          ...p, recurringDays: p.recurringDays.includes(w.id) ? p.recurringDays.filter(x => x !== w.id) : [...p.recurringDays, w.id],
+                        }))} style={{
+                          flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                          background: active ? 'var(--accent-purple)' : 'rgba(255,255,255,0.06)',
+                          color: active ? 'white' : 'var(--text-secondary)',
+                        }}>{w.label}</button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+                    Se crearán las actividades de los próximos ~12 semanas en los días seleccionados.
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, letterSpacing: 1 }}>CATEGORÍA</div>

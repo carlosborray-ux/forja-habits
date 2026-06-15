@@ -668,11 +668,11 @@ export default function TareasPage() {
               <div style={{ display: 'flex', gap: 10 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>HORA INICIO (opcional)</div>
-                  <input type="time" value={form.startTime ?? ''} onChange={e => setForm(p => ({ ...p, startTime: e.target.value || undefined }))} className="input-glass" />
+                  <input type="time" step={900} value={form.startTime ?? ''} onChange={e => setForm(p => ({ ...p, startTime: e.target.value || undefined }))} className="input-glass" />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>HORA FIN (opcional)</div>
-                  <input type="time" value={form.endTime ?? ''} onChange={e => setForm(p => ({ ...p, endTime: e.target.value || undefined }))} className="input-glass" />
+                  <input type="time" step={900} value={form.endTime ?? ''} onChange={e => setForm(p => ({ ...p, endTime: e.target.value || undefined }))} className="input-glass" />
                 </div>
               </div>
 

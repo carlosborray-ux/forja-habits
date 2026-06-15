@@ -208,6 +208,11 @@ html, body {
 .input-glass:focus { border-color: rgba(124,111,255,0.6); }
 .input-glass::placeholder { color: var(--text-muted); }
 
+/* ── Inputs de fecha/hora: iconos visibles sobre fondo oscuro ── */
+input[type="date"], input[type="time"], input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
 /* ── Select (dropdown options con fondo oscuro) ── */
 select.input-glass { cursor: pointer; }
 select.input-glass option {
