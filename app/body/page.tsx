@@ -4,6 +4,7 @@ import { useAppData, WeightEntry, getTodayKey } from '@/lib/store'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { celebrate } from '@/lib/celebrate'
 
 const BODY_LEVELS = [
   { emoji: '🥚', title: 'El Origen' },
@@ -114,6 +115,7 @@ export default function BodyPage() {
   const handleSave = () => {
     const w = parseFloat(weight)
     if (isNaN(w) || w < 30 || w > 300) return
+    if (latest && w < latest.weight) celebrate('weight')
     addWeight({ date: today, weight: w, notes })
     setWeight('')
     setNotes('')

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAppData, getTodayKey, getStreak, getHabitMonthPct, getHabitMonthDone, Habit, Category } from '@/lib/store'
 import { format, getDaysInMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { celebrate } from '@/lib/celebrate'
 
 const COLORS = ['#7C6FFF','#00E5B8','#FF6B6B','#FFD93D','#4FC3F7','#FF4FA3','#FF8C00','#9B59B6','#2ECC71','#E74C3C']
 const ICONS  = ['💪','🧠','💧','📚','🏋️','😴','🥗','🧘','🔥','📈','✍️','🎯','🌅','🙏','📊','🚿','📵','🍽️','🎵','🏃']
@@ -372,7 +373,7 @@ export default function HabitsPage() {
                         const isToday = d.key === today
                         return (
                           <div key={d.key} style={{ height: 48, textAlign: 'center', padding: '4px 0', background: 'rgba(255,255,255,0.025)' }}>
-                            <button onClick={() => toggleHabit(h.id, d.key)} style={{
+                            <button onClick={() => { if (!checked) celebrate('habit'); toggleHabit(h.id, d.key) }} style={{
                               width: 40, height: 40, borderRadius: 12,
                               border: checked ? 'none' : isToday ? `2px solid ${habitCatColor}` : '2px solid rgba(255,255,255,0.12)',
                               cursor: 'pointer',

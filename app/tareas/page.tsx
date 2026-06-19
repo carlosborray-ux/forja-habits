@@ -8,6 +8,7 @@ import {
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 import TimeSelect from '@/components/TimeSelect'
+import { celebrate } from '@/lib/celebrate'
 
 type View = 'today' | 'upcoming' | 'all' | 'completed' | 'calendar' | string // string = listId
 
@@ -193,6 +194,7 @@ export default function TareasPage() {
   }
 
   const handleToggle = (t: Task) => {
+    if (!t.completed) celebrate('task')
     if (!t.completed && t.recurring && t.recurring !== 'none' && t.dueDate) {
       // Tarea recurrente: en vez de completarla, la reprograma a la próxima fecha
       updateTask({ ...t, dueDate: nextDate(t.dueDate, t.recurring, t.recurringDays) })
@@ -526,7 +528,7 @@ export default function TareasPage() {
                   <button className="btn-ghost" onClick={() => { postpone(planCurrent, format(addDays(new Date(), 1), 'yyyy-MM-dd')); planAdvance() }}>→ Mover a mañana</button>
                   <button className="btn-ghost" onClick={() => { postpone(planCurrent, format(addDays(new Date(), 7), 'yyyy-MM-dd')); planAdvance() }}>→ Próxima semana</button>
                   <button className="btn-ghost" onClick={() => { postpone(planCurrent, undefined); planAdvance() }}>🗑 Quitar fecha</button>
-                  <button onClick={() => { toggleTask(planCurrent.id); planAdvance() }} style={{ background: 'rgba(0,229,184,0.1)', border: '1px solid rgba(0,229,184,0.3)', borderRadius: 9, padding: '9px', color: 'var(--accent-teal)', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>✓ Ya la completé</button>
+                  <button onClick={() => { celebrate('task'); toggleTask(planCurrent.id); planAdvance() }} style={{ background: 'rgba(0,229,184,0.1)', border: '1px solid rgba(0,229,184,0.3)', borderRadius: 9, padding: '9px', color: 'var(--accent-teal)', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>✓ Ya la completé</button>
                 </div>
               </>
             )}
