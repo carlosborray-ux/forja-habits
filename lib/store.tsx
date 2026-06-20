@@ -378,6 +378,126 @@ function useAppDataInternal() {
   return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, setGoalWeight, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList }
 }
 
+// ── Sistema de niveles: 100 títulos diseñados para 5+ años de uso ──
+export const LEVEL_NAMES: { name: string; color: string }[] = [
+  // Tier 1: Despertar (1-10) — verde
+  { name: '🌱 Semilla',             color: '#52D68A' },
+  { name: '🌿 Brote',               color: '#52D68A' },
+  { name: '💧 Primera Gota',        color: '#52D68A' },
+  { name: '⚡ Chispa',              color: '#52D68A' },
+  { name: '🌾 Raíz',               color: '#52D68A' },
+  { name: '🌅 Amanecer',           color: '#52D68A' },
+  { name: '🔥 Llama Inicial',       color: '#52D68A' },
+  { name: '🌊 Primera Ola',         color: '#52D68A' },
+  { name: '🌟 Estrella Naciente',   color: '#52D68A' },
+  { name: '☀️ Nuevo Sol',           color: '#52D68A' },
+  // Tier 2: Forja (11-20) — azul
+  { name: '⚒️ Aprendiz',           color: '#4FC3F7' },
+  { name: '🛡️ Escudero',           color: '#4FC3F7' },
+  { name: '🗡️ Espada Joven',       color: '#4FC3F7' },
+  { name: '🏹 Arquero',            color: '#4FC3F7' },
+  { name: '🥊 Primer Golpe',        color: '#4FC3F7' },
+  { name: '⚔️ Guerrero',           color: '#4FC3F7' },
+  { name: '🦁 Corazón Valiente',    color: '#4FC3F7' },
+  { name: '💪 Músculo',            color: '#4FC3F7' },
+  { name: '🔩 Hierro',             color: '#4FC3F7' },
+  { name: '🏔️ Primer Pico',        color: '#4FC3F7' },
+  // Tier 3: Ascenso (21-30) — violeta
+  { name: '🌪️ Viento',            color: '#9B8FFF' },
+  { name: '🦅 Primer Vuelo',        color: '#9B8FFF' },
+  { name: '🎯 Objetivo Claro',      color: '#9B8FFF' },
+  { name: '🧗 Escalador',          color: '#9B8FFF' },
+  { name: '🌙 Guardián',           color: '#9B8FFF' },
+  { name: '🔱 Tres Pilares',        color: '#9B8FFF' },
+  { name: '💎 Diamante en Bruto',   color: '#9B8FFF' },
+  { name: '🚀 Despegue',           color: '#9B8FFF' },
+  { name: '🌈 Horizonte',          color: '#9B8FFF' },
+  { name: '🦊 Astuto',             color: '#9B8FFF' },
+  // Tier 4: Disciplina (31-40) — naranja
+  { name: '🧠 Mente Despierta',     color: '#FF9F43' },
+  { name: '🏃 Velocista',          color: '#FF9F43' },
+  { name: '🎪 Equilibrista',        color: '#FF9F43' },
+  { name: '🌺 Floreciendo',         color: '#FF9F43' },
+  { name: '🔮 Visionario',          color: '#FF9F43' },
+  { name: '⚖️ Equilibrio',         color: '#FF9F43' },
+  { name: '🗿 Roca Sólida',         color: '#FF9F43' },
+  { name: '🌍 Tierra Firme',        color: '#FF9F43' },
+  { name: '🔥 Fuego Controlado',    color: '#FF9F43' },
+  { name: '🎖️ Primera Medalla',    color: '#FF9F43' },
+  // Tier 5: Madurez (41-50) — dorado
+  { name: '🧘 Meditación',         color: '#FFD93D' },
+  { name: '🦋 Transformación',      color: '#FFD93D' },
+  { name: '🗻 Mitad de la Cima',    color: '#FFD93D' },
+  { name: '💡 Luz Interior',        color: '#FFD93D' },
+  { name: '🌐 Conexión Total',      color: '#FFD93D' },
+  { name: '🎨 Artista',            color: '#FFD93D' },
+  { name: '🔬 Científico',          color: '#FFD93D' },
+  { name: '📚 Estudioso',          color: '#FFD93D' },
+  { name: '🕊️ Paz Interior',       color: '#FFD93D' },
+  { name: '🏰 Constructor',         color: '#FFD93D' },
+  // Tier 6: Élite (51-60) — coral
+  { name: '⚜️ Élite',             color: '#FF6B6B' },
+  { name: '🦾 Brazo de Acero',      color: '#FF6B6B' },
+  { name: '🧩 Estratega',          color: '#FF6B6B' },
+  { name: '🎓 Graduado',           color: '#FF6B6B' },
+  { name: '🔑 Poseedor de Llaves',  color: '#FF6B6B' },
+  { name: '🌠 Cazador de Estrellas',color: '#FF6B6B' },
+  { name: '🏆 Trofeo Vivo',         color: '#FF6B6B' },
+  { name: '🦸 Superhéroe',         color: '#FF6B6B' },
+  { name: '🌋 Fuerza Volcánica',    color: '#FF6B6B' },
+  { name: '⚡ Rayo Constante',      color: '#FF6B6B' },
+  // Tier 7: Maestría (61-70) — rosa
+  { name: '🧬 ADN Campeón',        color: '#FF4FA3' },
+  { name: '🦁 Rey de la Sabana',    color: '#FF4FA3' },
+  { name: '🎯 Tiro Certero',        color: '#FF4FA3' },
+  { name: '🏅 Medallista',         color: '#FF4FA3' },
+  { name: '💫 Fenómeno',           color: '#FF4FA3' },
+  { name: '🌌 Viajero del Cosmos',  color: '#FF4FA3' },
+  { name: '🔯 Maestro Antiguo',     color: '#FF4FA3' },
+  { name: '🗡️ Guerrero Élite',     color: '#FF4FA3' },
+  { name: '🧙 Sabio',              color: '#FF4FA3' },
+  { name: '🦄 Ser Único',          color: '#FF4FA3' },
+  // Tier 8: Leyenda (71-80) — celeste platino
+  { name: '🌞 Sol Radiante',        color: '#A8D8FF' },
+  { name: '🌊 Marea Eterna',        color: '#A8D8FF' },
+  { name: '🏯 Gran Fortaleza',      color: '#A8D8FF' },
+  { name: '🧿 Ojo del Universo',    color: '#A8D8FF' },
+  { name: '🔮 Oráculo',            color: '#A8D8FF' },
+  { name: '🦅 Águila Real',         color: '#A8D8FF' },
+  { name: '🔱 Señor de Hábitos',    color: '#A8D8FF' },
+  { name: '💠 Cristal Perfecto',    color: '#A8D8FF' },
+  { name: '🌟 Nova',               color: '#A8D8FF' },
+  { name: '⚡ Tormenta Imparable',  color: '#A8D8FF' },
+  // Tier 9: Mítico (81-90) — lavanda brillante
+  { name: '🌑 Eclipse Total',       color: '#D7B4F3' },
+  { name: '💎 Diamante Puro',       color: '#D7B4F3' },
+  { name: '🌌 Nebulosa',           color: '#D7B4F3' },
+  { name: '⚔️ Gladiador Eterno',   color: '#D7B4F3' },
+  { name: '🧿 Tercer Ojo Abierto',  color: '#D7B4F3' },
+  { name: '🔥 Llama Eterna',        color: '#D7B4F3' },
+  { name: '🌺 Flor Inmortal',       color: '#D7B4F3' },
+  { name: '🏆 Gran Campeón',        color: '#D7B4F3' },
+  { name: '🌋 Erupción Perpetua',   color: '#D7B4F3' },
+  { name: '🦁 León Inmortal',       color: '#D7B4F3' },
+  // Tier 10: Trascendencia (91-100) — oro puro
+  { name: '⚜️ Orden Suprema',      color: '#FFD700' },
+  { name: '🌠 Supernova',          color: '#FFD700' },
+  { name: '🧬 Evolución Máxima',    color: '#FFD700' },
+  { name: '🪐 Señor del Tiempo',    color: '#FFD700' },
+  { name: '🌌 Galaxia Propia',      color: '#FFD700' },
+  { name: '🔮 Profeta',            color: '#FFD700' },
+  { name: '🌞 Sol Inextinguible',   color: '#FFD700' },
+  { name: '👑 Gran Rey',           color: '#FFD700' },
+  { name: '🦋 Metamorfosis Final',  color: '#FFD700' },
+  { name: '⚡ FORJA MÁXIMA',       color: '#FFD700' },
+]
+
+export function getLevelInfo(level: number): { name: string; color: string; tier: number } {
+  const idx = Math.min(level - 1, LEVEL_NAMES.length - 1)
+  const base = level <= LEVEL_NAMES.length ? LEVEL_NAMES[idx] : { name: `⚡ Leyenda Infinita`, color: '#FFD700' }
+  return { ...base, tier: Math.ceil(Math.min(level, 100) / 10) }
+}
+
 const COLOMBIA_TZ = 'America/Bogota'
 const colombiaFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: COLOMBIA_TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
 
