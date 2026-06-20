@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useAppData, getTodayKey } from '@/lib/store'
+import { useAppData, getTodayKey, getLevelInfo } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 
 const NAV = [
@@ -23,6 +23,7 @@ export default function Sidebar() {
   const { data } = useAppData()
 
   const xpPercent = ((data.xp % 500) / 500) * 100
+  const levelInfo = getLevelInfo(data.level)
 
   const todayStr = getTodayKey()
   const pendingToday = data.tasks.filter(t => !t.completed && t.dueDate && t.dueDate <= todayStr).length
@@ -58,13 +59,14 @@ export default function Sidebar() {
       </div>
 
       {/* Level strip */}
-      <div style={{ margin: '0 12px 20px', padding: '10px 12px', background: 'rgba(124,111,255,0.08)', borderRadius: 12, border: '1px solid rgba(124,111,255,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-          <span style={{ color: 'var(--text-muted)' }}>NIVEL <strong style={{ color: 'var(--accent-gold)' }}>{data.level}</strong></span>
-          <span style={{ color: 'var(--accent-gold)' }}>⚡ {data.xp} XP</span>
+      <div style={{ margin: '0 12px 20px', padding: '10px 12px', background: `${levelInfo.color}12`, borderRadius: 12, border: `1px solid ${levelInfo.color}44` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1 }}>NIVEL <strong style={{ color: levelInfo.color }}>{data.level}</strong></span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>⚡ {data.xp} XP</span>
         </div>
-        <div className="prog-track" style={{ height: 5 }}>
-          <div className="prog-fill" style={{ width: `${xpPercent}%`, background: 'linear-gradient(90deg, var(--accent-purple), var(--accent-teal))' }} />
+        <div style={{ fontSize: 13, fontWeight: 700, color: levelInfo.color, marginBottom: 7, lineHeight: 1.2 }}>{levelInfo.name}</div>
+        <div className="prog-track" style={{ height: 4 }}>
+          <div className="prog-fill" style={{ width: `${xpPercent}%`, background: levelInfo.color, boxShadow: `0 0 6px ${levelInfo.color}88` }} />
         </div>
       </div>
 
