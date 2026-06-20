@@ -115,7 +115,8 @@ export default function BodyPage() {
   const handleSave = () => {
     const w = parseFloat(weight)
     if (isNaN(w) || w < 30 || w > 300) return
-    if (latest && w < latest.weight) celebrate('weight')
+    const historicMin = sorted.length > 0 ? Math.min(...sorted.map(e => e.weight)) : null
+    if (historicMin !== null && w < historicMin) celebrate('weight')
     addWeight({ date: today, weight: w, notes })
     setWeight('')
     setNotes('')
