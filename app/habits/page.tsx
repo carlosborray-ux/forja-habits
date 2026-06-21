@@ -8,11 +8,15 @@ import { celebrate } from '@/lib/celebrate'
 const COLORS = ['#7C6FFF','#00E5B8','#FF6B6B','#FFD93D','#4FC3F7','#FF4FA3','#FF8C00','#9B59B6','#2ECC71','#E74C3C']
 const ICONS  = ['💪','🧠','💧','📚','🏋️','😴','🥗','🧘','🔥','📈','✍️','🎯','🌅','🙏','📊','🚿','📵','🍽️','🎵','🏃']
 const STACKS = ['Mañana','Día','Trabajo','Noche','Fin de semana']
+const WEEKDAYS_H = [
+  { id: 1, label: 'L' }, { id: 2, label: 'M' }, { id: 3, label: 'X' },
+  { id: 4, label: 'J' }, { id: 5, label: 'V' }, { id: 6, label: 'S' }, { id: 0, label: 'D' },
+]
 
 type ModalMode = 'add' | 'edit' | null
 
 const emptyHabit = (): Omit<Habit, 'id' | 'completedDays' | 'createdAt'> => ({
-  name: '', color: '#7C6FFF', icon: '💪', category: '', goal: 30, stack: 'Día'
+  name: '', color: '#7C6FFF', icon: '💪', category: '', goal: 30, stack: 'Día', activeDays: []
 })
 
 export default function HabitsPage() {
@@ -84,7 +88,7 @@ export default function HabitsPage() {
     setHabitModal('add')
   }
   const openEdit = (h: Habit) => {
-    setForm({ name: h.name, color: h.color, icon: h.icon, category: h.category, goal: h.goal, stack: h.stack })
+    setForm({ name: h.name, color: h.color, icon: h.icon, category: h.category, goal: h.goal, stack: h.stack, activeDays: h.activeDays ?? [] })
     setEditingHabit(h)
     setHabitModal('edit')
   }
@@ -369,33 +373,43 @@ export default function HabitsPage() {
 
                       {/* Checkboxes por día */}
                       {days.map(d => {
+                        const dayDow = new Date(year, month, d.n).getDay()
+                        const isActiveDay = !h.activeDays || h.activeDays.length === 0 || h.activeDays.includes(dayDow)
                         const checked = !!h.completedDays[d.key]
                         const isToday = d.key === today
                         return (
-                          <div key={d.key} style={{ height: 48, textAlign: 'center', padding: '4px 0', background: 'rgba(255,255,255,0.025)' }}>
-                            <button onClick={() => { if (!checked) celebrate('habit'); toggleHabit(h.id, d.key) }} style={{
-                              width: 40, height: 40, borderRadius: 12,
-                              border: checked ? 'none' : isToday ? `2px solid ${habitCatColor}` : '2px solid rgba(255,255,255,0.12)',
-                              cursor: 'pointer',
-                              background: checked ? habitCatColor : isToday ? `${habitCatColor}15` : 'rgba(255,255,255,0.04)',
-                              boxShadow: checked ? `0 0 16px ${habitCatColor}88` : 'none',
-                              transition: 'all 0.15s ease',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              margin: '0 auto',
-                            }}>
-                              {checked && (
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                  <path d="M3 9L7 13L15 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              )}
-                            </button>
+                          <div key={d.key} style={{ height: 48, textAlign: 'center', padding: '4px 0', background: isActiveDay ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.12)' }}>
+                            {isActiveDay ? (
+                              <button onClick={() => { if (!checked) celebrate('habit'); toggleHabit(h.id, d.key) }} style={{
+                                width: 40, height: 40, borderRadius: 12,
+                                border: checked ? 'none' : isToday ? `2px solid ${habitCatColor}` : '2px solid rgba(255,255,255,0.12)',
+                                cursor: 'pointer',
+                                background: checked ? habitCatColor : isToday ? `${habitCatColor}15` : 'rgba(255,255,255,0.04)',
+                                boxShadow: checked ? `0 0 16px ${habitCatColor}88` : 'none',
+                                transition: 'all 0.15s ease',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                margin: '0 auto',
+                              }}>
+                                {checked && (
+                                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <path d="M3 9L7 13L15 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                )}
+                              </button>
+                            ) : (
+                              <div style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.1)', fontSize: 14 }}>—</div>
+                            )}
                           </div>
                         )
                       })}
 
                       {/* META */}
                       <div style={{ height: 48, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.025)' }}>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{done}/{h.goal}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          {done}/{h.activeDays && h.activeDays.length > 0
+                            ? days.filter(d => h.activeDays!.includes(new Date(year, month, d.n).getDay())).length
+                            : h.goal}
+                        </span>
                       </div>
 
                       {/* CUMPL */}
@@ -475,21 +489,50 @@ export default function HabitsPage() {
                 </div>
               </div>
 
-              {/* Goal */}
+              {/* Días de la semana */}
               <div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>META MENSUAL (días)</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <input
-                    type="range" min={1} max={31} value={form.goal}
-                    onChange={e => setForm(p => ({ ...p, goal: Number(e.target.value) }))}
-                    style={{ flex: 1, accentColor: 'var(--accent-purple)' }}
-                  />
-                  <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--accent-purple)', minWidth: 40, textAlign: 'center' }}>{form.goal}</span>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>DÍAS ACTIVOS</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {WEEKDAYS_H.map(w => {
+                    const active = (form.activeDays ?? []).includes(w.id)
+                    return (
+                      <button key={w.id} type="button" onClick={() => setForm(p => {
+                        const cur = p.activeDays ?? []
+                        return { ...p, activeDays: cur.includes(w.id) ? cur.filter(x => x !== w.id) : [...cur, w.id] }
+                      })} style={{
+                        flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+                        fontSize: 12, fontWeight: 700,
+                        background: active ? 'var(--accent-purple)' : 'rgba(255,255,255,0.06)',
+                        color: active ? 'white' : 'var(--text-secondary)',
+                        outline: active ? '1px solid var(--accent-purple)' : 'none',
+                      }}>{w.label}</button>
+                    )
+                  })}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                  {form.goal === 31 ? 'Todos los días del mes' : form.goal >= 20 ? 'Casi todos los días' : form.goal >= 10 ? 'Varias veces por semana' : 'Pocas veces al mes'}
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>
+                  {(form.activeDays ?? []).length === 0
+                    ? 'Sin filtro — aplica todos los días'
+                    : `Activo solo ${(form.activeDays ?? []).length} días/semana — la meta mensual se calcula automáticamente`}
                 </div>
               </div>
+
+              {/* Goal — solo si no hay días configurados */}
+              {(form.activeDays ?? []).length === 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>META MENSUAL (días)</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <input
+                      type="range" min={1} max={31} value={form.goal}
+                      onChange={e => setForm(p => ({ ...p, goal: Number(e.target.value) }))}
+                      style={{ flex: 1, accentColor: 'var(--accent-purple)' }}
+                    />
+                    <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--accent-purple)', minWidth: 40, textAlign: 'center' }}>{form.goal}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                    {form.goal === 31 ? 'Todos los días del mes' : form.goal >= 20 ? 'Casi todos los días' : form.goal >= 10 ? 'Varias veces por semana' : 'Pocas veces al mes'}
+                  </div>
+                </div>
+              )}
 
               {/* Icon */}
               <div>
