@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useAppData, getTodayKey, getStreak, getHabitMonthPct, getHabitMonthDone, Habit, Category } from '@/lib/store'
+import { useAppData, getTodayKey, getStreak, getHabitMonthPct, getHabitMonthDone, habitStartDayOfMonth, Habit, Category } from '@/lib/store'
 import { format, getDaysInMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { celebrate } from '@/lib/celebrate'
@@ -372,9 +372,12 @@ export default function HabitsPage() {
                       </div>
 
                       {/* Checkboxes por día */}
-                      {days.map(d => {
+                      {(() => {
+                        const startDay = habitStartDayOfMonth(h, year, month)
+                        return days.map(d => {
                         const dayDow = new Date(year, month, d.n).getDay()
-                        const isActiveDay = !h.activeDays || h.activeDays.length === 0 || h.activeDays.includes(dayDow)
+                        const beforeCreation = d.n < startDay
+                        const isActiveDay = !beforeCreation && (!h.activeDays || h.activeDays.length === 0 || h.activeDays.includes(dayDow))
                         const checked = !!h.completedDays[d.key]
                         const isToday = d.key === today
                         return (
@@ -401,14 +404,16 @@ export default function HabitsPage() {
                             )}
                           </div>
                         )
-                      })}
+                      })})()}
 
                       {/* META */}
                       <div style={{ height: 48, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.025)' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                          {done}/{h.activeDays && h.activeDays.length > 0
-                            ? days.filter(d => h.activeDays!.includes(new Date(year, month, d.n).getDay())).length
-                            : h.goal}
+                          {done}/{(() => {
+                            if (!h.activeDays || h.activeDays.length === 0) return h.goal
+                            const startDay = habitStartDayOfMonth(h, year, month)
+                            return days.filter(d => d.n >= startDay && h.activeDays!.includes(new Date(year, month, d.n).getDay())).length
+                          })()}
                         </span>
                       </div>
 

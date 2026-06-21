@@ -535,11 +535,19 @@ export function getDayScore(habits: Habit[], dateKey: string): number {
   return Math.round(relevant.filter(h => h.completedDays[dateKey]).length / relevant.length * 100)
 }
 
+// Primer día del mes que aplica para este hábito (respeta fecha de creación)
+export function habitStartDayOfMonth(habit: Habit, year: number, month: number): number {
+  const created = new Date(habit.createdAt)
+  if (created.getFullYear() === year && created.getMonth() === month) return created.getDate()
+  return 1
+}
+
 export function getHabitMonthPct(habit: Habit, year: number, month: number): number {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const startDay = habitStartDayOfMonth(habit, year, month)
   let done = 0
   let expected = 0
-  for (let d = 1; d <= daysInMonth; d++) {
+  for (let d = startDay; d <= daysInMonth; d++) {
     const dow = new Date(year, month, d).getDay()
     const isActive = !habit.activeDays || habit.activeDays.length === 0 || habit.activeDays.includes(dow)
     if (!isActive) continue
