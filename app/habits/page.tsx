@@ -178,11 +178,25 @@ export default function HabitsPage() {
             n: d.n,
           }))
           const todayIdx = dayScores.findIndex(d => d.key === today)
-          const polyline = pts.map(p => `${p.x},${p.y}`).join(' ')
-          // Área rellena debajo
-          const areaPath = `M${pts[0].x},${PAD.top + innerH} ` +
-            pts.map(p => `L${p.x},${p.y}`).join(' ') +
-            ` L${pts[pts.length - 1].x},${PAD.top + innerH} Z`
+          // Curva suavizada mediante bezier cúbico (catmull-rom → bezier, tensión 0.35)
+          const smoothCurve = (points: {x:number,y:number}[]) => {
+            if (points.length < 2) return ''
+            const T = 0.35
+            let d = `M${points[0].x},${points[0].y}`
+            for (let i = 0; i < points.length - 1; i++) {
+              const p0 = points[i-1] ?? points[i]
+              const p1 = points[i], p2 = points[i+1]
+              const p3 = points[i+2] ?? p2
+              const cp1x = (p1.x + T*(p2.x-p0.x)/2).toFixed(1)
+              const cp1y = (p1.y + T*(p2.y-p0.y)/2).toFixed(1)
+              const cp2x = (p2.x - T*(p3.x-p1.x)/2).toFixed(1)
+              const cp2y = (p2.y - T*(p3.y-p1.y)/2).toFixed(1)
+              d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`
+            }
+            return d
+          }
+          const linePath = smoothCurve(pts)
+          const areaPath = linePath + ` L${pts[pts.length-1].x},${PAD.top+innerH} L${pts[0].x},${PAD.top+innerH} Z`
           return (
             <div className="card" style={{ marginLeft: 190, marginBottom: 6, padding: '14px 0 8px', overflow: 'hidden', width: days.length * 54 + 266 }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6, padding: '0 16px' }}>
@@ -208,7 +222,7 @@ export default function HabitsPage() {
                 {/* Área rellena */}
                 <path d={areaPath} fill="url(#lineGrad)" />
                 {/* Línea principal */}
-                <polyline points={polyline} fill="none" stroke="#FF4FA3" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                <path d={linePath} fill="none" stroke="#FF4FA3" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
                 {/* Puntos y etiquetas de días */}
                 {pts.map((p, i) => {
                   const isToday = i === todayIdx
