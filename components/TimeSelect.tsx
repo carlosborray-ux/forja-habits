@@ -7,6 +7,14 @@ for (let h = 0; h < 24; h++) {
   }
 }
 
+function to12(time: string): string {
+  const [hStr, mStr] = time.split(':')
+  const h = parseInt(hStr, 10)
+  const period = h < 12 ? 'am' : 'pm'
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  return `${h12}:${mStr} ${period}`
+}
+
 export default function TimeSelect({ value, onChange, className, style }: {
   value: string
   onChange: (v: string) => void
@@ -15,9 +23,9 @@ export default function TimeSelect({ value, onChange, className, style }: {
 }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)} className={className ?? 'input-glass'} style={style}>
-      {!value && <option value="">-- : --</option>}
-      {value && !OPTIONS.includes(value) && <option value={value}>{value}</option>}
-      {OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+      {!value && <option value="">-- hora --</option>}
+      {value && !OPTIONS.includes(value) && <option value={value}>{to12(value)}</option>}
+      {OPTIONS.map(o => <option key={o} value={o}>{to12(o)}</option>)}
     </select>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useAppData, Task, TaskList, SubTask, getTodayKey } from '@/lib/store'
+import { useAppData, Task, TaskList, SubTask, getTodayKey, fmt12 } from '@/lib/store'
 import {
   format, addDays, isToday, isTomorrow, isPast,
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth,
@@ -270,7 +270,7 @@ export default function TareasPage() {
               {due && <span style={{ fontSize: 11, fontWeight: 700, color: due.color }}>📅 {due.text}</span>}
               {(t.startTime || t.endTime) && (
                 <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                  🕐 {t.startTime ?? '?'}{t.endTime ? ` – ${t.endTime}` : ''}{duration ? ` (${duration})` : ''}
+                  🕐 {t.startTime ? fmt12(t.startTime) : '?'}{t.endTime ? ` – ${fmt12(t.endTime)}` : ''}{duration ? ` (${duration})` : ''}
                 </span>
               )}
               {gcal && (

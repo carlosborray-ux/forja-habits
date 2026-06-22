@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
-import { useAppData, AgendaBlock, getDateKey } from '@/lib/store'
+import { useAppData, AgendaBlock, getDateKey, fmt12 } from '@/lib/store'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 import TimeSelect from '@/components/TimeSelect'
@@ -292,7 +292,7 @@ export default function AgendaPage() {
                         </div>
                         {!short && (
                           <div style={{ fontSize: 10, color, marginTop: 2, opacity: b.done ? 0.5 : 1 }}>
-                            {b.time}{b.endTime ? ` – ${b.endTime}` : ''}
+                            {fmt12(b.time)}{b.endTime ? ` – ${fmt12(b.endTime)}` : ''}
                           </div>
                         )}
                       </div>

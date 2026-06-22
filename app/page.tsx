@@ -1,5 +1,5 @@
 'use client'
-import { useAppData, getTodayKey, getDateKey, getDayScore, getStreak, getMotivationalMessage, getTodayQuote, getLevelInfo } from '@/lib/store'
+import { useAppData, getTodayKey, getDateKey, getDayScore, getStreak, getMotivationalMessage, getTodayQuote, getLevelInfo, fmt12 } from '@/lib/store'
 import ProgressRing from '@/components/ProgressRing'
 import { celebrate } from '@/lib/celebrate'
 import { format, subDays, startOfMonth } from 'date-fns'
@@ -249,10 +249,10 @@ export default function WarRoom() {
                 const catColor = catColors[b.category] ?? 'var(--accent-purple)'
                 return (
                   <div key={b.id} style={{ display:'flex', alignItems:'center', gap: 10, padding:'8px 10px', background: b.done?'rgba(0,229,184,0.06)':'rgba(255,255,255,0.04)', borderRadius: 9, borderLeft:`3px solid ${catColor}`, opacity: b.done?0.55:1 }}>
-                    <div style={{ minWidth: 44, fontSize: 11, fontWeight: 700, color: catColor }}>{b.time}</div>
+                    <div style={{ minWidth: 52, fontSize: 11, fontWeight: 700, color: catColor }}>{fmt12(b.time)}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color:'var(--text-primary)', textDecoration: b.done?'line-through':'none' }}>{b.title}</div>
-                      {b.endTime && <div style={{ fontSize: 11, color:'var(--text-muted)' }}>hasta {b.endTime}</div>}
+                      {b.endTime && <div style={{ fontSize: 11, color:'var(--text-muted)' }}>hasta {fmt12(b.endTime)}</div>}
                     </div>
                     {b.done && <span style={{ fontSize: 14 }}>✅</span>}
                   </div>

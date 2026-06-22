@@ -505,6 +505,16 @@ const colombiaFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: COLOMBIA_
 export const getTodayKey  = () => colombiaFormatter.format(new Date())
 export const getDateKey   = (d: Date) => colombiaFormatter.format(d)
 
+// Convierte "HH:MM" (24h) a "h:MMam/pm" para display
+export function fmt12(time: string): string {
+  if (!time) return ''
+  const [hStr, mStr] = time.split(':')
+  const h = parseInt(hStr, 10)
+  const period = h < 12 ? 'am' : 'pm'
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  return `${h12}:${mStr}${period}`
+}
+
 export function getStreak(habit: Habit): number {
   const active = habit.activeDays
   const hasFilter = active && active.length > 0
