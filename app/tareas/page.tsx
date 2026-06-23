@@ -145,7 +145,7 @@ export default function TareasPage() {
   const in14 = format(addDays(today, 14), 'yyyy-MM-dd')
 
   const todayTasks    = pending.filter(t => t.dueDate && (t.dueDate <= todayStr))
-  const upcomingTasks = pending.filter(t => t.dueDate && t.dueDate >= todayStr && t.dueDate <= in14)
+  const upcomingTasks = pending.filter(t => t.dueDate && t.dueDate > todayStr && t.dueDate <= in14)
   const somedayTasks  = pending.filter(t => !t.dueDate)
   const completedTasks = data.tasks.filter(t => t.completed).sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
 
@@ -320,14 +320,13 @@ export default function TareasPage() {
   // ── Agrupación por día para vista "Próximos" ──
   const upcomingGroups = () => {
     const groups: { label: string; tasks: Task[] }[] = []
-    for (let i = 0; i <= 14; i++) {
+    for (let i = 1; i <= 14; i++) {
       const d = addDays(today, i)
       const k = format(d, 'yyyy-MM-dd')
       const dayTasks = sortTasks(pending.filter(t => t.dueDate === k))
       if (dayTasks.length === 0) continue
       let label: string
-      if (i === 0) label = 'Hoy'
-      else if (i === 1) label = 'Mañana'
+      if (i === 1) label = 'Mañana'
       else label = format(d, "EEEE d 'de' MMMM", { locale: es })
       groups.push({ label: label.charAt(0).toUpperCase() + label.slice(1), tasks: dayTasks })
     }
