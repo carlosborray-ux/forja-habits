@@ -33,7 +33,7 @@ const RECURRING: { id: 'none' | 'daily' | 'weekly' | 'monthly'; label: string }[
 const emptyList = (): Omit<TaskList, 'id'> => ({ name: '', color: COLORS[0], icon: ICONS[0] })
 
 const emptyTask = (listId: string): Omit<Task, 'id' | 'createdAt'> => ({
-  title: '', notes: '', listId, dueDate: getTodayKey(), priority: 0, completed: false, subtasks: [], recurring: 'none',
+  title: '', notes: '', listId, dueDate: undefined, priority: 0, completed: false, subtasks: [], recurring: 'none',
   recurringDays: [], startTime: undefined, endTime: undefined,
 })
 
@@ -187,7 +187,8 @@ export default function TareasPage() {
   const addQuick = () => {
     if (!quickTitle.trim()) return
     const listId = (typeof view === 'string' && data.taskLists.some(l => l.id === view)) ? view : (data.taskLists[0]?.id ?? 't1')
-    addTask({ id: Date.now().toString(), createdAt: new Date().toISOString(), title: quickTitle.trim(), notes: '', listId, dueDate: todayStr, priority: 0, completed: false, subtasks: [], recurring: 'none' })
+    const quickDate = view === 'someday' ? undefined : view === 'today' ? todayStr : undefined
+    addTask({ id: Date.now().toString(), createdAt: new Date().toISOString(), title: quickTitle.trim(), notes: '', listId, dueDate: quickDate, priority: 0, completed: false, subtasks: [], recurring: 'none' })
     setQuickTitle('')
   }
 
@@ -631,7 +632,26 @@ export default function TareasPage() {
               <div style={{ display: 'flex', gap: 10 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>FECHA LÍMITE</div>
-                  <input type="date" value={form.dueDate ?? ''} onChange={e => setForm(p => ({ ...p, dueDate: e.target.value || undefined }))} className="input-glass" />
+                  <input type="date" value={form.dueDate ?? ''} onChange={e => setForm(p => ({ ...p, dueDate: e.target.value || undefined }))} className="input-glass" style={{ marginBottom: 6 }} />
+                  <div style={{ display: 'flex', gap: 5 }}>
+                    {[
+                      { label: 'Hoy', value: getTodayKey() },
+                      { label: 'Mañana', value: (() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10) })() },
+                    ].map(opt => (
+                      <button key={opt.label} type="button" onClick={() => setForm(p => ({ ...p, dueDate: opt.value }))}
+                        style={{ flex: 1, fontSize: 11, padding: '4px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
+                          background: form.dueDate === opt.value ? 'rgba(124,111,255,0.3)' : 'rgba(255,255,255,0.06)',
+                          color: form.dueDate === opt.value ? 'var(--accent-purple)' : 'var(--text-muted)' }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => setForm(p => ({ ...p, dueDate: undefined }))}
+                      style={{ flex: 1, fontSize: 11, padding: '4px 0', borderRadius: 6, border: 'none', cursor: 'pointer',
+                        background: !form.dueDate ? 'rgba(255,79,163,0.25)' : 'rgba(255,255,255,0.06)',
+                        color: !form.dueDate ? 'var(--accent-pink)' : 'var(--text-muted)' }}>
+                      🌫️ Algún día
+                    </button>
+                  </div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>REPETICIÓN</div>
