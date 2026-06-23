@@ -142,10 +142,8 @@ export default function TareasPage() {
 
   const today = new Date()
   const todayStr = getTodayKey()
-  const in14 = format(addDays(today, 14), 'yyyy-MM-dd')
-
-  const todayTasks    = pending.filter(t => t.dueDate && (t.dueDate <= todayStr))
-  const upcomingTasks = pending.filter(t => t.dueDate && t.dueDate > todayStr && t.dueDate <= in14)
+  const todayTasks    = pending.filter(t => t.dueDate && t.dueDate <= todayStr)
+  const upcomingTasks = pending.filter(t => t.dueDate && t.dueDate > todayStr)
   const somedayTasks  = pending.filter(t => !t.dueDate)
   const completedTasks = data.tasks.filter(t => t.completed).sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
 
@@ -319,18 +317,19 @@ export default function TareasPage() {
 
   // ── Agrupación por día para vista "Próximos" ──
   const upcomingGroups = () => {
-    const groups: { label: string; tasks: Task[] }[] = []
-    for (let i = 1; i <= 14; i++) {
-      const d = addDays(today, i)
-      const k = format(d, 'yyyy-MM-dd')
-      const dayTasks = sortTasks(pending.filter(t => t.dueDate === k))
-      if (dayTasks.length === 0) continue
+    const dates = [...new Set(upcomingTasks.map(t => t.dueDate!))].sort()
+    return dates.map(k => {
+      const d = new Date(k + 'T12:00:00')
+      const diffDays = Math.round((d.getTime() - new Date(todayStr + 'T12:00:00').getTime()) / 86400000)
       let label: string
-      if (i === 1) label = 'Mañana'
-      else label = format(d, "EEEE d 'de' MMMM", { locale: es })
-      groups.push({ label: label.charAt(0).toUpperCase() + label.slice(1), tasks: dayTasks })
-    }
-    return groups
+      if (diffDays === 1) label = 'Mañana'
+      else if (diffDays <= 7) label = format(d, "EEEE d 'de' MMMM", { locale: es })
+      else label = format(d, "d 'de' MMMM yyyy", { locale: es })
+      return {
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        tasks: sortTasks(upcomingTasks.filter(t => t.dueDate === k)),
+      }
+    })
   }
 
   const openAddList = () => { setEditingList(null); setListForm(emptyList()); setListModal(true) }
