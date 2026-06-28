@@ -94,10 +94,12 @@ export default function HabitsPage() {
   }
   const saveHabit = () => {
     if (!form.name.trim()) return
+    const now = new Date()
+    const activeDaysSince = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
     if (habitModal === 'add') {
-      addHabit({ id: Date.now().toString(), ...form, completedDays: {}, createdAt: new Date().toISOString() })
+      addHabit({ id: Date.now().toString(), ...form, activeDaysSince, completedDays: {}, createdAt: new Date().toISOString() })
     } else if (editingHabit) {
-      updateHabit({ ...editingHabit, ...form })
+      updateHabit({ ...editingHabit, ...form, activeDaysSince })
     }
     setHabitModal(null)
   }
@@ -391,7 +393,9 @@ export default function HabitsPage() {
                         return days.map(d => {
                         const dayDow = new Date(year, month, d.n).getDay()
                         const beforeCreation = d.n < startDay
-                        const isActiveDay = !beforeCreation && (!h.activeDays || h.activeDays.length === 0 || h.activeDays.includes(dayDow))
+                        const monthStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+                        const adForMonth = (!h.activeDays || h.activeDays.length === 0 || (h.activeDaysSince && monthStr < h.activeDaysSince)) ? [] : h.activeDays
+                        const isActiveDay = !beforeCreation && (adForMonth.length === 0 || adForMonth.includes(dayDow))
                         const checked = !!h.completedDays[d.key]
                         const isToday = d.key === today
                         return (
@@ -424,9 +428,11 @@ export default function HabitsPage() {
                       <div style={{ height: 48, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.025)' }}>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                           {done}/{(() => {
-                            if (!h.activeDays || h.activeDays.length === 0) return h.goal
+                            const mStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+                            const ad = (!h.activeDays || h.activeDays.length === 0 || (h.activeDaysSince && mStr < h.activeDaysSince)) ? [] : h.activeDays
+                            if (ad.length === 0) return h.goal
                             const startDay = habitStartDayOfMonth(h, year, month)
-                            return days.filter(d => d.n >= startDay && h.activeDays!.includes(new Date(year, month, d.n).getDay())).length
+                            return days.filter(d => d.n >= startDay && ad.includes(new Date(year, month, d.n).getDay())).length
                           })()}
                         </span>
                       </div>

@@ -12,7 +12,8 @@ export interface Habit {
   completedDays: Record<string, boolean>
   createdAt: string
   stack?: string
-  activeDays?: number[]  // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb; vacío = todos los días
+  activeDays?: number[]     // 0=Dom 1=Lun 2=Mar 3=Mié 4=Jue 5=Vie 6=Sáb; vacío = todos los días
+  activeDaysSince?: string  // "YYYY-MM-01" — mes desde el que aplica la config actual de activeDays
 }
 
 export interface WeightEntry {
@@ -537,11 +538,22 @@ export function getStreak(habit: Habit): number {
   return streak
 }
 
+// Devuelve los activeDays efectivos para una fecha dada (respeta activeDaysSince)
+function effectiveActiveDays(habit: Habit, monthStr: string): number[] {
+  if (!habit.activeDays || habit.activeDays.length === 0) return []
+  if (!habit.activeDaysSince || monthStr >= habit.activeDaysSince) return habit.activeDays
+  return []  // antes de activeDaysSince → sin filtro de días
+}
+
 export function getDayScore(habits: Habit[], dateKey: string): number {
   if (!habits.length) return 0
   const dow = new Date(dateKey + 'T12:00:00').getDay()
-  const relevant = habits.filter(h => !h.activeDays || h.activeDays.length === 0 || h.activeDays.includes(dow))
-  if (!relevant.length) return 100  // día de descanso: sin hábitos activos = perfecto
+  const monthStr = dateKey.slice(0, 7) + '-01'
+  const relevant = habits.filter(h => {
+    const ad = effectiveActiveDays(h, monthStr)
+    return ad.length === 0 || ad.includes(dow)
+  })
+  if (!relevant.length) return 100
   return Math.round(relevant.filter(h => h.completedDays[dateKey]).length / relevant.length * 100)
 }
 
@@ -555,17 +567,19 @@ export function habitStartDayOfMonth(habit: Habit, year: number, month: number):
 export function getHabitMonthPct(habit: Habit, year: number, month: number): number {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const startDay = habitStartDayOfMonth(habit, year, month)
+  const monthStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const ad = effectiveActiveDays(habit, monthStr)
   let done = 0
   let expected = 0
   for (let d = startDay; d <= daysInMonth; d++) {
     const dow = new Date(year, month, d).getDay()
-    const isActive = !habit.activeDays || habit.activeDays.length === 0 || habit.activeDays.includes(dow)
+    const isActive = ad.length === 0 || ad.includes(dow)
     if (!isActive) continue
     expected++
     const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     if (habit.completedDays[key]) done++
   }
-  const target = habit.activeDays && habit.activeDays.length > 0 ? expected : habit.goal
+  const target = ad.length > 0 ? expected : habit.goal
   if (target <= 0) return 0
   return Math.min(100, Math.round(done / target * 100))
 }
