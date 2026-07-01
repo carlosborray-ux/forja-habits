@@ -125,6 +125,7 @@ export interface AppData {
   gold: number
   identity: string
   goalWeight: number | null
+  foodPhotos: Record<string, string[]> // date -> array of public URLs (max 6)
 }
 
 const DEFAULT_HABITS: Habit[] = [
@@ -196,6 +197,7 @@ const DEFAULT_DATA: AppData = {
   gold: 0,
   identity: 'Élite',
   goalWeight: null,
+  foodPhotos: {},
 }
 
 // Migra hábitos cuyo `category` quedó guardado como nombre (legado) a su id estable
@@ -349,6 +351,41 @@ function useAppDataInternal() {
   const logout            = ()              => supabase.auth.signOut()
   const setGoalWeight     = (g: number | null) => setData(prev => ({ ...prev, goalWeight: g }))
 
+  // ── Fotos de comida ──
+  const uploadFoodPhoto = async (date: string, file: File): Promise<string | null> => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+    const existing = data.foodPhotos?.[date] ?? []
+    if (existing.length >= 6) return null
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `${user.id}/${date}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('food-photos')
+      .upload(path, file, { contentType: file.type, upsert: false })
+    if (error) { console.error('Upload error:', error); return null }
+    const { data: urlData } = supabase.storage.from('food-photos').getPublicUrl(path)
+    const url = urlData.publicUrl
+    setData(prev => {
+      const ex = prev.foodPhotos?.[date] ?? []
+      if (ex.length >= 6) return prev
+      return { ...prev, foodPhotos: { ...prev.foodPhotos, [date]: [...ex, url] } }
+    })
+    return url
+  }
+
+  const deleteFoodPhoto = async (date: string, url: string) => {
+    const marker = '/object/public/food-photos/'
+    const idx = url.indexOf(marker)
+    if (idx !== -1) {
+      const path = url.slice(idx + marker.length)
+      await supabase.storage.from('food-photos').remove([path])
+    }
+    setData(prev => ({
+      ...prev,
+      foodPhotos: { ...prev.foodPhotos, [date]: (prev.foodPhotos?.[date] ?? []).filter(u => u !== url) }
+    }))
+  }
+
   // ── Finanzas ──
   const addTransaction    = (t: Transaction) => setData(prev => ({ ...prev, transactions: [...prev.transactions, t] }))
   const updateTransaction = (t: Transaction) => setData(prev => ({ ...prev, transactions: prev.transactions.map(x => x.id === t.id ? t : x) }))
@@ -377,7 +414,7 @@ function useAppDataInternal() {
   const updateTaskList = (l: TaskList) => setData(prev => ({ ...prev, taskLists: prev.taskLists.map(x => x.id === l.id ? l : x) }))
   const deleteTaskList = (id: string)  => setData(prev => ({ ...prev, taskLists: prev.taskLists.filter(l => l.id !== id), tasks: prev.tasks.filter(t => t.listId !== id) }))
 
-  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, setGoalWeight, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList }
+  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, setGoalWeight, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList, uploadFoodPhoto, deleteFoodPhoto }
 }
 
 // ── Sistema de niveles: 100 títulos diseñados para 5+ años de uso ──

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAppData, WeightEntry, getTodayKey } from '@/lib/store'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format } from 'date-fns'
@@ -47,7 +47,7 @@ const MOTIVATION_GOAL_REACHED = [
 ]
 
 export default function BodyPage() {
-  const { data, loaded, addWeight, deleteWeight, setGoalWeight } = useAppData()
+  const { data, loaded, addWeight, deleteWeight, setGoalWeight, uploadFoodPhoto, deleteFoodPhoto } = useAppData()
   const today = getTodayKey()
 
   // Migración: si esta cuenta no tiene meta sincronizada pero este dispositivo
@@ -73,6 +73,34 @@ export default function BodyPage() {
   const [editEntry, setEditEntry]   = useState<WeightEntry | null>(null)
   const [editW, setEditW]           = useState('')
   const [editN, setEditN]           = useState('')
+
+  // Fotos
+  const [expandedPhotoDate, setExpandedPhotoDate] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [lightbox, setLightbox] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadTargetDate = useRef<string>(today)
+
+  const handlePhotoClick = (date: string) => {
+    uploadTargetDate.current = date
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const date = uploadTargetDate.current
+    const existing = data.foodPhotos?.[date] ?? []
+    const slots = 6 - existing.length
+    const toUpload = files.slice(0, slots)
+    setUploading(true)
+    for (const file of toUpload) {
+      await uploadFoodPhoto(date, file)
+    }
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    setExpandedPhotoDate(date)
+  }
 
   const sorted = [...data.weights].sort((a, b) => a.date.localeCompare(b.date))
   const latest = sorted[sorted.length - 1]
@@ -312,45 +340,109 @@ export default function BodyPage() {
       {sorted.length > 0 && (
         <div className="card">
           <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 14 }}>HISTORIAL</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[...sorted].reverse().slice(0, 30).map(w => {
               const isEdit = editEntry?.date === w.date
               const prev = sorted.find((_, i) => sorted[i + 1]?.date === w.date)
               const delta = prev ? +(w.weight - prev.weight).toFixed(1) : null
+              const photos = data.foodPhotos?.[w.date] ?? []
+              const isExpanded = expandedPhotoDate === w.date
               return (
-                <div key={w.date} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 9 }}>
-                  {isEdit ? (
-                    <>
-                      <span style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 140 }}>{format(new Date(w.date + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })}</span>
-                      <input type="number" value={editW} onChange={e => setEditW(e.target.value)} step="0.1"
-                        style={{ width: 90, padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--accent-purple)', borderRadius: 7, color: 'var(--text-primary)', fontSize: 14, outline: 'none' }} />
-                      <input value={editN} onChange={e => setEditN(e.target.value)} placeholder="Notas"
-                        style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 7, color: 'var(--text-primary)', fontSize: 13, outline: 'none' }} />
-                      <button onClick={saveEdit} style={{ padding: '6px 12px', background: 'var(--accent-purple)', border: 'none', borderRadius: 7, color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>✓</button>
-                      <button onClick={() => setEditEntry(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}>✕</button>
-                    </>
-                  ) : (
-                    <>
-                      <span style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 140 }}>{format(new Date(w.date + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })}</span>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-purple)', minWidth: 80 }}>{w.weight} kg</span>
-                      {delta !== null && (
-                        <span style={{ fontSize: 13, fontWeight: 700, color: delta < 0 ? 'var(--accent-teal)' : delta > 0 ? 'var(--accent-coral)' : 'var(--text-muted)', minWidth: 60 }}>
-                          {delta > 0 ? '+' : ''}{delta} kg
-                        </span>
-                      )}
-                      {w.notes && <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', flex: '1 1 100%', whiteSpace: 'normal', wordBreak: 'break-word' }}>{w.notes}</span>}
-                      <button onClick={() => openEdit(w)} style={{ marginLeft: 'auto', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
-                        ✏️ Editar
-                      </button>
-                      <button onClick={() => deleteWeight(w.date)} style={{ background: 'none', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '4px 10px', color: 'var(--accent-coral)', cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>
-                        ✕
-                      </button>
-                    </>
+                <div key={w.date} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, overflow: 'hidden' }}>
+                  {/* Fila principal */}
+                  <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '10px 12px' }}>
+                    {isEdit ? (
+                      <>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 140 }}>{format(new Date(w.date + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })}</span>
+                        <input type="number" value={editW} onChange={e => setEditW(e.target.value)} step="0.1"
+                          style={{ width: 90, padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--accent-purple)', borderRadius: 7, color: 'var(--text-primary)', fontSize: 14, outline: 'none' }} />
+                        <input value={editN} onChange={e => setEditN(e.target.value)} placeholder="Notas"
+                          style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 7, color: 'var(--text-primary)', fontSize: 13, outline: 'none' }} />
+                        <button onClick={saveEdit} style={{ padding: '6px 12px', background: 'var(--accent-purple)', border: 'none', borderRadius: 7, color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>✓</button>
+                        <button onClick={() => setEditEntry(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', minWidth: 140 }}>{format(new Date(w.date + 'T12:00:00'), "d 'de' MMMM yyyy", { locale: es })}</span>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-purple)', minWidth: 80 }}>{w.weight} kg</span>
+                        {delta !== null && (
+                          <span style={{ fontSize: 13, fontWeight: 700, color: delta < 0 ? 'var(--accent-teal)' : delta > 0 ? 'var(--accent-coral)' : 'var(--text-muted)', minWidth: 60 }}>
+                            {delta > 0 ? '+' : ''}{delta} kg
+                          </span>
+                        )}
+                        {w.notes && <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', flex: '1 1 100%', whiteSpace: 'normal', wordBreak: 'break-word' }}>{w.notes}</span>}
+                        <button
+                          onClick={() => setExpandedPhotoDate(isExpanded ? null : w.date)}
+                          style={{ marginLeft: 'auto', background: photos.length ? 'rgba(124,111,255,0.12)' : 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 10px', color: photos.length ? 'var(--accent-purple)' : 'var(--text-muted)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          📷 {photos.length > 0 ? photos.length : '+'} fotos
+                        </button>
+                        <button onClick={() => openEdit(w)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>
+                          ✏️
+                        </button>
+                        <button onClick={() => deleteWeight(w.date)} style={{ background: 'none', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 6, padding: '4px 10px', color: 'var(--accent-coral)', cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>
+                          ✕
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Panel de fotos expandible */}
+                  {isExpanded && (
+                    <div style={{ padding: '0 12px 14px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1, margin: '10px 0 8px' }}>FOTOS DE LO QUE COMISTE · {photos.length}/6</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
+                        {photos.map((url, i) => (
+                          <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={url} alt={`foto ${i + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                              onClick={() => setLightbox(url)}
+                            />
+                            <button
+                              onClick={() => deleteFoodPhoto(w.date, url)}
+                              style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none', color: 'white', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        {photos.length < 6 && (
+                          <button
+                            onClick={() => handlePhotoClick(w.date)}
+                            disabled={uploading}
+                            style={{ aspectRatio: '1', borderRadius: 8, border: '2px dashed rgba(124,111,255,0.4)', background: 'rgba(124,111,255,0.05)', color: 'var(--accent-purple)', cursor: uploading ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: 22, gap: 4, transition: 'all 0.2s' }}>
+                            {uploading ? '⏳' : '+'}
+                            <span style={{ fontSize: 9, opacity: 0.7 }}>{uploading ? 'subiendo' : 'foto'}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Input oculto para subir fotos */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, cursor: 'zoom-out' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="foto ampliada" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 12, objectFit: 'contain', boxShadow: '0 0 60px rgba(0,0,0,0.8)' }} />
+          <button onClick={() => setLightbox(null)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 40, height: 40, fontSize: 20, color: 'white', cursor: 'pointer' }}>✕</button>
         </div>
       )}
     </div>
