@@ -77,12 +77,14 @@ export default function BodyPage() {
   // Fotos
   const [expandedPhotoDate, setExpandedPhotoDate] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadTargetDate = useRef<string>(today)
 
   const handlePhotoClick = (date: string) => {
     uploadTargetDate.current = date
+    setUploadError(null)
     fileInputRef.current?.click()
   }
 
@@ -94,8 +96,13 @@ export default function BodyPage() {
     const slots = 6 - existing.length
     const toUpload = files.slice(0, slots)
     setUploading(true)
+    setUploadError(null)
     for (const file of toUpload) {
-      await uploadFoodPhoto(date, file)
+      const result = await uploadFoodPhoto(date, file)
+      if (result.error) {
+        setUploadError(result.error)
+        break
+      }
     }
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -390,6 +397,16 @@ export default function BodyPage() {
                   {isExpanded && (
                     <div style={{ padding: '0 12px 14px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1, margin: '10px 0 8px' }}>FOTOS DE LO QUE COMISTE · {photos.length}/6</div>
+                      {uploadError && (
+                        <div style={{ fontSize: 12, color: 'var(--accent-coral)', background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: 7, padding: '8px 12px', marginBottom: 10 }}>
+                          ⚠️ Error al subir: {uploadError}
+                          {uploadError.includes('Bucket not found') || uploadError.includes('bucket') ? (
+                            <div style={{ marginTop: 4, fontSize: 11, opacity: 0.8 }}>
+                              Necesitas crear el bucket "food-photos" en Supabase Storage (ver instrucciones abajo)
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
                         {photos.map((url, i) => (
                           <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>

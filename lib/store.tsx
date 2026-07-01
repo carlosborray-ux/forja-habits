@@ -352,17 +352,20 @@ function useAppDataInternal() {
   const setGoalWeight     = (g: number | null) => setData(prev => ({ ...prev, goalWeight: g }))
 
   // ── Fotos de comida ──
-  const uploadFoodPhoto = async (date: string, file: File): Promise<string | null> => {
+  const uploadFoodPhoto = async (date: string, file: File): Promise<{ url: string | null; error: string | null }> => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+    if (!user) return { url: null, error: 'No hay sesión activa' }
     const existing = data.foodPhotos?.[date] ?? []
-    if (existing.length >= 6) return null
-    const ext = file.name.split('.').pop() ?? 'jpg'
+    if (existing.length >= 6) return { url: null, error: 'Ya tienes 6 fotos para este día' }
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
     const path = `${user.id}/${date}/${Date.now()}.${ext}`
     const { error } = await supabase.storage
       .from('food-photos')
       .upload(path, file, { contentType: file.type, upsert: false })
-    if (error) { console.error('Upload error:', error); return null }
+    if (error) {
+      console.error('Upload error:', error)
+      return { url: null, error: error.message }
+    }
     const { data: urlData } = supabase.storage.from('food-photos').getPublicUrl(path)
     const url = urlData.publicUrl
     setData(prev => {
@@ -370,14 +373,14 @@ function useAppDataInternal() {
       if (ex.length >= 6) return prev
       return { ...prev, foodPhotos: { ...prev.foodPhotos, [date]: [...ex, url] } }
     })
-    return url
+    return { url, error: null }
   }
 
   const deleteFoodPhoto = async (date: string, url: string) => {
     const marker = '/object/public/food-photos/'
     const idx = url.indexOf(marker)
     if (idx !== -1) {
-      const path = url.slice(idx + marker.length)
+      const path = decodeURIComponent(url.slice(idx + marker.length))
       await supabase.storage.from('food-photos').remove([path])
     }
     setData(prev => ({
