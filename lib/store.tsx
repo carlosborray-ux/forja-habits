@@ -360,13 +360,13 @@ function useAppDataInternal() {
     const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
     const path = `${user.id}/${date}/${Date.now()}.${ext}`
     const { error } = await supabase.storage
-      .from('food-photos')
+      .from('food-photo')
       .upload(path, file, { contentType: file.type, upsert: false })
     if (error) {
       console.error('Upload error:', error)
       return { url: null, error: error.message }
     }
-    const { data: urlData } = supabase.storage.from('food-photos').getPublicUrl(path)
+    const { data: urlData } = supabase.storage.from('food-photo').getPublicUrl(path)
     const url = urlData.publicUrl
     setData(prev => {
       const ex = prev.foodPhotos?.[date] ?? []
@@ -377,11 +377,11 @@ function useAppDataInternal() {
   }
 
   const deleteFoodPhoto = async (date: string, url: string) => {
-    const marker = '/object/public/food-photos/'
+    const marker = '/object/public/food-photo/'
     const idx = url.indexOf(marker)
     if (idx !== -1) {
       const path = decodeURIComponent(url.slice(idx + marker.length))
-      await supabase.storage.from('food-photos').remove([path])
+      await supabase.storage.from('food-photo').remove([path])
     }
     setData(prev => ({
       ...prev,
