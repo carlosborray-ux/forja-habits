@@ -127,7 +127,12 @@ export default function HabitsPage() {
         <div>
           <h1 className="gradient-text-purple" style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>HÁBITOS</h1>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-            {data.habits.filter(h => h.completedDays[today]).length}/{data.habits.length} completados hoy
+            {(() => {
+              const dow = new Date().getDay()
+              const mStr = today.slice(0, 7) + '-01'
+              const active = data.habits.filter(h => !h.activeDays?.length || (h.activeDaysSince && mStr < h.activeDaysSince) || h.activeDays.includes(dow))
+              return `${active.filter(h => h.completedDays[today]).length}/${active.length} completados hoy`
+            })()}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -332,9 +337,17 @@ export default function HabitsPage() {
           {/* ── Grupos de hábitos ── */}
           {groupsToShow.map(({ cat, habits: groupHabits }) => {
             const catColor = cat?.color ?? '#888'
-            const catDone  = groupHabits.filter(h => h.completedDays[today]).length
-            const catTotal = groupHabits.length
-            const catPct   = Math.round(catDone / catTotal * 100)
+            const todayDow = new Date().getDay()
+            const todayMonthStr = today.slice(0, 7) + '-01'
+            const isActiveToday = (h: Habit) => {
+              if (!h.activeDays?.length) return true
+              if (h.activeDaysSince && todayMonthStr < h.activeDaysSince) return true
+              return h.activeDays.includes(todayDow)
+            }
+            const activeToday  = groupHabits.filter(h => isActiveToday(h))
+            const catDone  = activeToday.filter(h => h.completedDays[today]).length
+            const catTotal = activeToday.length
+            const catPct   = catTotal > 0 ? Math.round(catDone / catTotal * 100) : 0
 
             return (
               <div key={`group-${cat?.id ?? '__sin__'}`} style={{ display: 'contents' }}>
