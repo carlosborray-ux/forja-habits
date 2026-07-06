@@ -242,7 +242,9 @@ export function useAppData() {
 function useAppDataInternal() {
   const [data, setData]     = useState<AppData>(DEFAULT_DATA)
   const [loaded, setLoaded] = useState(false)
-  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const syncTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const loadedRef  = useRef(false)  // ref para acceder en event listeners
+  const lastSyncAt = useRef(0)      // timestamp del último sync que enviamos
 
   // ── Carga inicial ──────────────────────────────────────
   useEffect(() => {
@@ -283,6 +285,7 @@ function useAppDataInternal() {
           window.location.href = '/auth'
         }
       }
+      loadedRef.current = true
       setLoaded(true)
     }
     init()
@@ -294,6 +297,33 @@ function useAppDataInternal() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ── Re-fetch cuando la pestaña vuelve a estar activa (sync multi-dispositivo) ──
+  useEffect(() => {
+    const refetch = async () => {
+      if (!loadedRef.current) return
+      // Si acabamos de hacer sync nosotros mismos, ignoramos el evento (evita loop)
+      if (Date.now() - lastSyncAt.current < 4000) return
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const { data: row } = await supabase
+        .from('user_data')
+        .select('data')
+        .eq('user_id', session.user.id)
+        .single()
+      if (row?.data) {
+        setData(prev => ({ ...prev, ...normalizeAppData(row.data) }))
+      }
+    }
+    const onFocus      = () => refetch()
+    const onVisibility = () => { if (!document.hidden) refetch() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
+
   // ── Sync a Supabase con debounce ───────────────────────
   useEffect(() => {
     if (!loaded) return
@@ -302,6 +332,7 @@ function useAppDataInternal() {
     syncTimer.current = setTimeout(async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        lastSyncAt.current = Date.now()
         const { error } = await supabase
           .from('user_data')
           .upsert({ user_id: user.id, data, updated_at: new Date().toISOString() })
