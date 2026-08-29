@@ -81,7 +81,7 @@ const MOTIVATION_GOAL_REACHED = [
 ]
 
 export default function BodyPage() {
-  const { data, loaded, addWeight, deleteWeight, setGoalWeight, uploadFoodPhoto, deleteFoodPhoto, unlockHito } = useAppData()
+  const { data, loaded, addWeight, deleteWeight, setGoalWeight, uploadFoodPhoto, deleteFoodPhoto, unlockHito, addMiniMeta, deleteMiniMeta, achieveMiniMeta } = useAppData()
   const today = getTodayKey()
 
   // Migración: si esta cuenta no tiene meta sincronizada pero este dispositivo
@@ -108,9 +108,37 @@ export default function BodyPage() {
   const [editW, setEditW]           = useState('')
   const [editN, setEditN]           = useState('')
 
-  // Hitos
+  // Hitos — auto-unlock silencioso de hitos ya logrados al cargar
+  useEffect(() => {
+    if (!loaded || sorted.length === 0) return
+    const unlocked = data.unlockedHitos ?? []
+    HITOS.forEach(h => {
+      if (!unlocked.includes(h.id) && h.check(sorted, goal)) {
+        unlockHito(h.id, h.xp, h.gold)
+      }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded])
+
+  // Mini metas — auto-marcar las ya logradas al cargar
+  useEffect(() => {
+    if (!loaded || sorted.length === 0) return
+    const latest = sorted[sorted.length - 1]
+    ;(data.weightMiniMetas ?? []).forEach(m => {
+      if (!m.achievedAt && latest.weight <= m.target) {
+        achieveMiniMeta(m.id, today)
+      }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded])
+
   const [newHito, setNewHito] = useState<HitoDef | null>(null)
   useEffect(() => { if (newHito) { const t = setTimeout(() => setNewHito(null), 4000); return () => clearTimeout(t) } }, [newHito])
+
+  // Mini metas — UI state
+  const [miniMetaInput, setMiniMetaInput] = useState('')
+  const [celebratedMini, setCelebratedMini] = useState<number | null>(null)
+  useEffect(() => { if (celebratedMini !== null) { const t = setTimeout(() => setCelebratedMini(null), 4000); return () => clearTimeout(t) } }, [celebratedMini])
 
   // Fotos
   const [expandedPhotoDate, setExpandedPhotoDate] = useState<string | null>(null)
@@ -200,6 +228,14 @@ export default function BodyPage() {
         unlockHito(h.id, h.xp, h.gold)
         celebrate('task')
         setNewHito(h)
+      }
+    })
+    // Verificar mini metas
+    ;(data.weightMiniMetas ?? []).forEach(m => {
+      if (!m.achievedAt && w <= m.target) {
+        achieveMiniMeta(m.id, today)
+        celebrate('weight')
+        setCelebratedMini(m.target)
       }
     })
     setWeight('')
@@ -392,6 +428,71 @@ export default function BodyPage() {
         </div>
       </div>
 
+      {/* ── Mini Metas personales ── */}
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1 }}>🎯 MINI METAS DE PESO</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>Tus propios targets — cuando llegues, se celebra</div>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--accent-teal)' }}>{(data.weightMiniMetas ?? []).filter(m => m.achievedAt).length}/{(data.weightMiniMetas ?? []).length}</div>
+        </div>
+
+        {/* Agregar nueva */}
+        {(data.weightMiniMetas ?? []).length < 20 && (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+            <input
+              type="number" value={miniMetaInput} onChange={e => setMiniMetaInput(e.target.value)}
+              placeholder="Target en kg  (ej: 90.0)" step="0.1"
+              style={{ flex: 1, padding: '9px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 14, outline: 'none' }}
+              onKeyDown={e => { if (e.key === 'Enter') { const v = parseFloat(miniMetaInput); if (!isNaN(v) && v > 0) { addMiniMeta(v); setMiniMetaInput('') } } }}
+            />
+            <button
+              onClick={() => { const v = parseFloat(miniMetaInput); if (!isNaN(v) && v > 0) { addMiniMeta(v); setMiniMetaInput('') } }}
+              className="btn-primary" style={{ padding: '9px 18px', fontSize: 13 }}>+ Agregar</button>
+          </div>
+        )}
+
+        {/* Lista */}
+        {(data.weightMiniMetas ?? []).length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>
+            Agrega tus targets de peso personales arriba
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {[...(data.weightMiniMetas ?? [])].sort((a,b) => a.target - b.target).map(m => {
+              const achieved = !!m.achievedAt
+              const latestW  = sorted.length > 0 ? sorted[sorted.length-1].weight : null
+              const diff     = latestW !== null ? +(latestW - m.target).toFixed(1) : null
+              return (
+                <div key={m.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', borderRadius: 10,
+                  background: achieved ? 'rgba(0,229,184,0.1)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${achieved ? 'rgba(0,229,184,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                  boxShadow: achieved ? '0 0 12px rgba(0,229,184,0.15)' : 'none',
+                  minWidth: 160,
+                }}>
+                  <span style={{ fontSize: 20 }}>{achieved ? '✅' : '🎯'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: achieved ? 'var(--accent-teal)' : 'var(--text-primary)' }}>{m.target} kg</div>
+                    {achieved
+                      ? <div style={{ fontSize: 10, color: 'var(--accent-teal)' }}>Logrado · +100 XP · +50 🪙</div>
+                      : diff !== null && <div style={{ fontSize: 11, color: diff <= 0 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
+                          {diff > 0 ? `Faltan ${diff} kg` : `¡Ya lo superaste!`}
+                        </div>
+                    }
+                  </div>
+                  {!achieved && (
+                    <button onClick={() => deleteMiniMeta(m.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, opacity: 0.6 }}>✕</button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       {/* ── Hitos ── */}
       {(['peso', 'consistencia', 'meta'] as const).map(cat => {
         const catHitos = HITOS.filter(h => h.category === cat)
@@ -527,6 +628,22 @@ export default function BodyPage() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* ── Toast mini meta lograda ── */}
+      {celebratedMini !== null && (
+        <div style={{
+          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, rgba(0,229,184,0.95), rgba(79,195,247,0.9))',
+          borderRadius: 16, padding: '16px 28px', zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(0,229,184,0.5)', textAlign: 'center',
+          animation: 'slideUp 0.4s ease', minWidth: 240,
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 4 }}>🎯</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', letterSpacing: 1 }}>🎉 MINI META LOGRADA</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: '4px 0' }}>{celebratedMini} kg</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginTop: 6 }}>+100 XP &nbsp;·&nbsp; +50 🪙</div>
         </div>
       )}
 
