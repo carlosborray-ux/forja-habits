@@ -6,6 +6,40 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { celebrate } from '@/lib/celebrate'
 
+interface HitoDef {
+  id: string; icon: string; name: string; desc: string; xp: number; gold: number
+  category: 'peso' | 'consistencia' | 'meta'
+  check: (weights: WeightEntry[], goal: number | null) => boolean
+}
+
+const HITOS: HitoDef[] = [
+  // ── Pérdida de peso ──
+  { id: 'first',   icon: '🏁', name: 'Primer Paso',      desc: 'Registra tu primer peso',   xp: 25,  gold: 15,  category: 'peso',        check: w => w.length >= 1 },
+  { id: 'lose_05', icon: '💧', name: 'Primera Gota',     desc: 'Baja 0.5 kg',               xp: 30,  gold: 15,  category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 0.5 },
+  { id: 'lose_1',  icon: '🎯', name: 'Primer Kilo',      desc: 'Baja 1 kg',                 xp: 50,  gold: 25,  category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 1 },
+  { id: 'lose_2',  icon: '⚡', name: 'En Marcha',        desc: 'Baja 2 kg',                 xp: 75,  gold: 35,  category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 2 },
+  { id: 'lose_3',  icon: '🔥', name: 'Encendido',        desc: 'Baja 3 kg',                 xp: 100, gold: 50,  category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 3 },
+  { id: 'lose_5',  icon: '💪', name: 'Cinco Kilos',      desc: 'Baja 5 kg',                 xp: 150, gold: 75,  category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 5 },
+  { id: 'lose_7',  icon: '🌟', name: 'Siete de Siete',   desc: 'Baja 7 kg',                 xp: 200, gold: 100, category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 7 },
+  { id: 'lose_10', icon: '🏆', name: 'Doble Dígito',     desc: 'Baja 10 kg',                xp: 300, gold: 150, category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 10 },
+  { id: 'lose_15', icon: '🦅', name: 'Vuelo Alto',       desc: 'Baja 15 kg',                xp: 400, gold: 200, category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 15 },
+  { id: 'lose_20', icon: '🐉', name: 'Modo Bestia',      desc: 'Baja 20 kg',                xp: 500, gold: 250, category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 20 },
+  { id: 'lose_25', icon: '👑', name: 'Élite',            desc: 'Baja 25 kg',                xp: 600, gold: 300, category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 25 },
+  { id: 'lose_30', icon: '🌈', name: 'Transformación',   desc: 'Baja 30 kg',                xp: 750, gold: 375, category: 'peso',        check: w => w.length >= 2 && w[0].weight - w[w.length-1].weight >= 30 },
+  // ── Consistencia ──
+  { id: 'days_7',  icon: '📅', name: 'Una Semana',       desc: '7 registros de peso',        xp: 60,  gold: 30,  category: 'consistencia', check: w => w.length >= 7 },
+  { id: 'days_14', icon: '🗓️', name: 'Dos Semanas',      desc: '14 registros',               xp: 100, gold: 50,  category: 'consistencia', check: w => w.length >= 14 },
+  { id: 'days_30', icon: '💯', name: 'Un Mes',           desc: '30 registros',               xp: 200, gold: 100, category: 'consistencia', check: w => w.length >= 30 },
+  { id: 'days_60', icon: '🔮', name: 'Dos Meses',        desc: '60 registros',               xp: 350, gold: 175, category: 'consistencia', check: w => w.length >= 60 },
+  { id: 'days_100',icon: '🧘', name: '100 Días',          desc: '100 registros',              xp: 500, gold: 250, category: 'consistencia', check: w => w.length >= 100 },
+  // ── Meta ──
+  { id: 'goal_50', icon: '🎯', name: 'Mitad del Camino', desc: '50% hacia tu meta',          xp: 150, gold: 75,  category: 'meta',        check: (w, g) => { if (!g || w.length < 2) return false; const pct = Math.abs(w[0].weight - w[w.length-1].weight) / Math.abs(g - w[0].weight) * 100; return pct >= 50 } },
+  { id: 'goal_90', icon: '🏃', name: 'Casi Llegando',    desc: '90% hacia tu meta',          xp: 250, gold: 125, category: 'meta',        check: (w, g) => { if (!g || w.length < 2) return false; const pct = Math.abs(w[0].weight - w[w.length-1].weight) / Math.abs(g - w[0].weight) * 100; return pct >= 90 } },
+  { id: 'goal_100',icon: '🏁', name: 'Meta Alcanzada',   desc: '¡Llegaste a tu meta!',       xp: 500, gold: 250, category: 'meta',        check: (w, g) => { if (!g || w.length < 1) return false; return w[w.length-1].weight <= g } },
+]
+
+const CAT_LABELS: Record<string, string> = { peso: '⚖️ Pérdida de Peso', consistencia: '📅 Consistencia', meta: '🎯 Meta' }
+
 const BODY_LEVELS = [
   { emoji: '🥚', title: 'El Origen' },
   { emoji: '🐣', title: 'Primeros Pasos' },
@@ -47,7 +81,7 @@ const MOTIVATION_GOAL_REACHED = [
 ]
 
 export default function BodyPage() {
-  const { data, loaded, addWeight, deleteWeight, setGoalWeight, uploadFoodPhoto, deleteFoodPhoto } = useAppData()
+  const { data, loaded, addWeight, deleteWeight, setGoalWeight, uploadFoodPhoto, deleteFoodPhoto, unlockHito } = useAppData()
   const today = getTodayKey()
 
   // Migración: si esta cuenta no tiene meta sincronizada pero este dispositivo
@@ -73,6 +107,10 @@ export default function BodyPage() {
   const [editEntry, setEditEntry]   = useState<WeightEntry | null>(null)
   const [editW, setEditW]           = useState('')
   const [editN, setEditN]           = useState('')
+
+  // Hitos
+  const [newHito, setNewHito] = useState<HitoDef | null>(null)
+  useEffect(() => { if (newHito) { const t = setTimeout(() => setNewHito(null), 4000); return () => clearTimeout(t) } }, [newHito])
 
   // Fotos
   const [expandedPhotoDate, setExpandedPhotoDate] = useState<string | null>(null)
@@ -152,7 +190,18 @@ export default function BodyPage() {
     if (isNaN(w) || w < 30 || w > 300) return
     const historicMin = sorted.length > 0 ? Math.min(...sorted.map(e => e.weight)) : null
     if (historicMin !== null && w < historicMin) celebrate('weight')
-    addWeight({ date: today, weight: w, notes })
+    const newEntry: WeightEntry = { date: today, weight: w, notes }
+    const newSorted = [...data.weights.filter(e => e.date !== today), newEntry].sort((a,b) => a.date.localeCompare(b.date))
+    addWeight(newEntry)
+    // Verificar hitos recién desbloqueados
+    const unlocked = data.unlockedHitos ?? []
+    HITOS.forEach(h => {
+      if (!unlocked.includes(h.id) && h.check(newSorted, goal)) {
+        unlockHito(h.id, h.xp, h.gold)
+        celebrate('task')
+        setNewHito(h)
+      }
+    })
     setWeight('')
     setNotes('')
   }
@@ -343,6 +392,45 @@ export default function BodyPage() {
         </div>
       </div>
 
+      {/* ── Hitos ── */}
+      {(['peso', 'consistencia', 'meta'] as const).map(cat => {
+        const catHitos = HITOS.filter(h => h.category === cat)
+        const unlockedIds = data.unlockedHitos ?? []
+        const doneCount = catHitos.filter(h => unlockedIds.includes(h.id)).length
+        return (
+          <div key={cat} className="card" style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: 1 }}>HITOS · {CAT_LABELS[cat]}</div>
+              <div style={{ fontSize: 11, color: 'var(--accent-purple)' }}>{doneCount}/{catHitos.length}</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10 }}>
+              {catHitos.map(h => {
+                const done = unlockedIds.includes(h.id)
+                return (
+                  <div key={h.id} style={{
+                    borderRadius: 10, padding: '12px 10px', textAlign: 'center',
+                    background: done ? 'rgba(124,111,255,0.1)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${done ? 'rgba(124,111,255,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                    opacity: done ? 1 : 0.45,
+                    transition: 'all 0.3s',
+                    boxShadow: done ? '0 0 14px rgba(124,111,255,0.15)' : 'none',
+                  }}>
+                    <div style={{ fontSize: 28, marginBottom: 6, filter: done ? 'none' : 'grayscale(1)' }}>{h.icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: done ? 'var(--text-primary)' : 'var(--text-muted)', marginBottom: 3 }}>{h.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.4 }}>{h.desc}</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, fontSize: 10 }}>
+                      <span style={{ color: done ? 'var(--accent-purple)' : 'var(--text-muted)' }}>⚡ {h.xp} XP</span>
+                      <span style={{ color: done ? 'var(--accent-gold)' : 'var(--text-muted)' }}>🪙 {h.gold}</span>
+                    </div>
+                    {done && <div style={{ fontSize: 9, color: 'var(--accent-teal)', marginTop: 5, letterSpacing: 0.5 }}>✓ LOGRADO</div>}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+
       {/* ── Historial (editable) ── */}
       {sorted.length > 0 && (
         <div className="card">
@@ -441,6 +529,27 @@ export default function BodyPage() {
           </div>
         </div>
       )}
+
+      {/* ── Toast hito desbloqueado ── */}
+      {newHito && (
+        <div style={{
+          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, rgba(124,111,255,0.95), rgba(0,229,184,0.9))',
+          borderRadius: 16, padding: '16px 28px', zIndex: 9999,
+          boxShadow: '0 8px 40px rgba(124,111,255,0.5)', textAlign: 'center',
+          animation: 'slideUp 0.4s ease',
+          minWidth: 260,
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 4 }}>{newHito.icon}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: 1 }}>🎉 HITO DESBLOQUEADO</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: 'white', margin: '4px 0' }}>{newHito.name}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{newHito.desc}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginTop: 8 }}>
+            +{newHito.xp} XP &nbsp;·&nbsp; +{newHito.gold} 🪙
+          </div>
+        </div>
+      )}
+      <style>{`@keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(20px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }`}</style>
 
       {/* Input oculto para subir fotos */}
       <input

@@ -126,6 +126,7 @@ export interface AppData {
   identity: string
   goalWeight: number | null
   foodPhotos: Record<string, string[]> // date -> array of public URLs (max 6)
+  unlockedHitos: string[]              // ids de hitos ya desbloqueados
 }
 
 const DEFAULT_HABITS: Habit[] = [
@@ -198,6 +199,7 @@ const DEFAULT_DATA: AppData = {
   identity: 'Élite',
   goalWeight: null,
   foodPhotos: {},
+  unlockedHitos: [],
 }
 
 // Migra hábitos cuyo `category` quedó guardado como nombre (legado) a su id estable
@@ -382,6 +384,20 @@ function useAppDataInternal() {
   const logout            = ()              => supabase.auth.signOut()
   const setGoalWeight     = (g: number | null) => setData(prev => ({ ...prev, goalWeight: g }))
 
+  const unlockHito = (id: string, xpReward: number, goldReward: number) =>
+    setData(prev => {
+      if (prev.unlockedHitos?.includes(id)) return prev
+      const newXp   = prev.xp   + xpReward
+      const newGold = prev.gold + goldReward
+      return {
+        ...prev,
+        unlockedHitos: [...(prev.unlockedHitos ?? []), id],
+        xp:    newXp,
+        gold:  newGold,
+        level: Math.floor(newXp / 500) + 1,
+      }
+    })
+
   // ── Fotos de comida ──
   const uploadFoodPhoto = async (date: string, file: File): Promise<{ url: string | null; error: string | null }> => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -448,7 +464,7 @@ function useAppDataInternal() {
   const updateTaskList = (l: TaskList) => setData(prev => ({ ...prev, taskLists: prev.taskLists.map(x => x.id === l.id ? l : x) }))
   const deleteTaskList = (id: string)  => setData(prev => ({ ...prev, taskLists: prev.taskLists.filter(l => l.id !== id), tasks: prev.tasks.filter(t => t.listId !== id) }))
 
-  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, setGoalWeight, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList, uploadFoodPhoto, deleteFoodPhoto }
+  return { data, loaded, logout, toggleHabit, addWeight, deleteWeight, saveJournal, addAgendaBlock, updateAgendaBlock, deleteAgendaBlock, toggleAgenda, addHabit, updateHabit, deleteHabit, setIdentity, setGoalWeight, addReward, deleteReward, redeemReward, setWater, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addFinanceCategory, updateFinanceCategory, deleteFinanceCategory, addTask, updateTask, deleteTask, toggleTask, toggleSubtask, addTaskList, updateTaskList, deleteTaskList, uploadFoodPhoto, deleteFoodPhoto, unlockHito }
 }
 
 // ── Sistema de niveles: 100 títulos diseñados para 5+ años de uso ──
