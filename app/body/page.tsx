@@ -132,13 +132,23 @@ export default function BodyPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded])
 
-  const [newHito, setNewHito] = useState<HitoDef | null>(null)
-  useEffect(() => { if (newHito) { const t = setTimeout(() => setNewHito(null), 4000); return () => clearTimeout(t) } }, [newHito])
+  // Cola de celebraciones — evita que se pisen entre sí
+  type CelebEvent = { type: 'hito'; hito: HitoDef } | { type: 'mini'; target: number }
+  const [celebQueue, setCelebQueue] = useState<CelebEvent[]>([])
+  const [activeCeleb, setActiveCeleb] = useState<CelebEvent | null>(null)
+  const pushCeleb = (ev: CelebEvent) => setCelebQueue(q => [...q, ev])
+
+  useEffect(() => {
+    if (activeCeleb || celebQueue.length === 0) return
+    const [next, ...rest] = celebQueue
+    setActiveCeleb(next)
+    setCelebQueue(rest)
+    const t = setTimeout(() => setActiveCeleb(null), 3500)
+    return () => clearTimeout(t)
+  }, [celebQueue, activeCeleb])
 
   // Mini metas — UI state
   const [miniMetaInput, setMiniMetaInput] = useState('')
-  const [celebratedMini, setCelebratedMini] = useState<number | null>(null)
-  useEffect(() => { if (celebratedMini !== null) { const t = setTimeout(() => setCelebratedMini(null), 4000); return () => clearTimeout(t) } }, [celebratedMini])
 
   // Fotos
   const [expandedPhotoDate, setExpandedPhotoDate] = useState<string | null>(null)
@@ -223,21 +233,22 @@ export default function BodyPage() {
     addWeight(newEntry)
     // Verificar hitos recién desbloqueados
     const unlocked = data.unlockedHitos ?? []
+    let hasCeleb = false
     HITOS.forEach(h => {
       if (!unlocked.includes(h.id) && h.check(newSorted, goal)) {
         unlockHito(h.id, h.xp, h.gold)
-        celebrate('task')
-        setNewHito(h)
+        pushCeleb({ type: 'hito', hito: h })
+        hasCeleb = true
       }
     })
-    // Verificar mini metas
     ;(data.weightMiniMetas ?? []).forEach(m => {
       if (!m.achievedAt && w <= m.target) {
         achieveMiniMeta(m.id, today)
-        celebrate('weight')
-        setCelebratedMini(m.target)
+        pushCeleb({ type: 'mini', target: m.target })
+        hasCeleb = true
       }
     })
+    if (hasCeleb) celebrate('task')
     setWeight('')
     setNotes('')
   }
@@ -631,39 +642,33 @@ export default function BodyPage() {
         </div>
       )}
 
-      {/* ── Toast mini meta lograda ── */}
-      {celebratedMini !== null && (
+      {/* ── Toast de celebración (cola) ── */}
+      {activeCeleb && (
         <div style={{
           position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-          background: 'linear-gradient(135deg, rgba(0,229,184,0.95), rgba(79,195,247,0.9))',
+          background: activeCeleb.type === 'mini'
+            ? 'linear-gradient(135deg, rgba(0,229,184,0.95), rgba(79,195,247,0.9))'
+            : 'linear-gradient(135deg, rgba(124,111,255,0.95), rgba(0,229,184,0.9))',
           borderRadius: 16, padding: '16px 28px', zIndex: 9999,
-          boxShadow: '0 8px 40px rgba(0,229,184,0.5)', textAlign: 'center',
-          animation: 'slideUp 0.4s ease', minWidth: 240,
+          boxShadow: activeCeleb.type === 'mini' ? '0 8px 40px rgba(0,229,184,0.5)' : '0 8px 40px rgba(124,111,255,0.5)',
+          textAlign: 'center', animation: 'slideUp 0.4s ease', minWidth: 260,
         }}>
-          <div style={{ fontSize: 36, marginBottom: 4 }}>🎯</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', letterSpacing: 1 }}>🎉 MINI META LOGRADA</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: '4px 0' }}>{celebratedMini} kg</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginTop: 6 }}>+100 XP &nbsp;·&nbsp; +50 🪙</div>
-        </div>
-      )}
-
-      {/* ── Toast hito desbloqueado ── */}
-      {newHito && (
-        <div style={{
-          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-          background: 'linear-gradient(135deg, rgba(124,111,255,0.95), rgba(0,229,184,0.9))',
-          borderRadius: 16, padding: '16px 28px', zIndex: 9999,
-          boxShadow: '0 8px 40px rgba(124,111,255,0.5)', textAlign: 'center',
-          animation: 'slideUp 0.4s ease',
-          minWidth: 260,
-        }}>
-          <div style={{ fontSize: 36, marginBottom: 4 }}>{newHito.icon}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: 1 }}>🎉 HITO DESBLOQUEADO</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: 'white', margin: '4px 0' }}>{newHito.name}</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{newHito.desc}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginTop: 8 }}>
-            +{newHito.xp} XP &nbsp;·&nbsp; +{newHito.gold} 🪙
-          </div>
+          {activeCeleb.type === 'mini' ? (
+            <>
+              <div style={{ fontSize: 36, marginBottom: 4 }}>🎯</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', letterSpacing: 1 }}>🎉 MINI META LOGRADA</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: '4px 0' }}>{activeCeleb.target} kg</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginTop: 6 }}>+100 XP &nbsp;·&nbsp; +50 🪙</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 36, marginBottom: 4 }}>{activeCeleb.hito.icon}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: 1 }}>🎉 HITO DESBLOQUEADO</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: 'white', margin: '4px 0' }}>{activeCeleb.hito.name}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{activeCeleb.hito.desc}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginTop: 8 }}>+{activeCeleb.hito.xp} XP &nbsp;·&nbsp; +{activeCeleb.hito.gold} 🪙</div>
+            </>
+          )}
         </div>
       )}
       <style>{`@keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(20px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }`}</style>
